@@ -1,0 +1,7 @@
+[package]
+name = "ppbert"
+version = "0.1.0"
+authors = ["Vincent Foley <vfoley@gmail.com>"]
+
+[dependencies]
+nom = "^2.1"
