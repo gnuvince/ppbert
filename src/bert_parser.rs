@@ -6,6 +6,7 @@ use nom::{IResult, ErrorKind};
 static BERT_MAGIC_NUMBER: u8 = 131;
 static SMALL_INTEGER_EXT: u8 = 97;
 static INTEGER_EXT: u8 = 98;
+static FLOAT_EXT: u8 = 99;
 static ATOM_EXT: u8 = 100;
 static SMALL_TUPLE_EXT: u8 = 104;
 static LARGE_TUPLE_EXT: u8 = 105;
@@ -115,8 +116,20 @@ fn binary(i0: &[u8]) -> IResult<&[u8], BertTerm> {
     IResult::Done(i3, BertTerm::Binary(elements))
 }
 
+fn is_zero(b: u8) -> bool { b == 0 }
+fn is_non_zero(b: u8) -> bool { b != 0 }
 
-fn float(i0: &[u8]) -> IResult<&[u8], BertTerm> {
+fn old_float(i0: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i1, _) = try_parse!(i0, tag!([FLOAT_EXT]));
+    let (i2, bytes) = try_parse!(i1, take_while!(is_non_zero));
+    let (i3, _) = try_parse!(i2, take_while!(is_zero));
+    let mut s = String::new();
+    for b in bytes { s.push(*b as char); }
+    let f = s.parse::<f64>().unwrap();
+    IResult::Done(i3, BertTerm::Float(f))
+}
+
+fn new_float(i0: &[u8]) -> IResult<&[u8], BertTerm> {
     let (i1, _) = try_parse!(i0, tag!([NEW_FLOAT_EXT]));
     let (i2, raw_bytes) = try_parse!(i1, nom::be_u64);
     let f: f64 = unsafe { mem::transmute(raw_bytes) };
@@ -135,7 +148,8 @@ named!(bert_term<&[u8], BertTerm>,
             | list
             | string_like_list
             | binary
-            | float
+            | old_float
+            | new_float
 ));
 
 pub fn parse(i0: &[u8]) -> IResult<&[u8], BertTerm> {
