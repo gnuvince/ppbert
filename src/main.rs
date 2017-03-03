@@ -15,7 +15,10 @@ fn main() {
 
     let _ = stdin.read_to_end(&mut buf);
     match bert_parser::parse(&buf[..]) {
-        IResult::Done(_, _) => { println!("ok"); }
+        IResult::Done(rest, ref term) if rest.is_empty() => {
+            println!("{}", term);
+        }
+        IResult::Done(rest, _) => { println!("input not all consumed, remaining: {:?}", rest); }
         IResult::Error(e) => { println!("error: {:?}", e); }
         IResult::Incomplete(_) => { println!("incomplete"); }
     }

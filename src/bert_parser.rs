@@ -2,6 +2,8 @@ extern crate nom;
 extern crate num;
 
 use std::mem;
+use std::fmt;
+
 use nom::{IResult, ErrorKind};
 use num::bigint;
 use num::bigint::ToBigInt;
@@ -34,6 +36,50 @@ pub enum BertTerm {
     List(Vec<BertTerm>),
     Binary(Vec<u8>)
 }
+
+
+impl fmt::Display for BertTerm {
+    #[allow(unused_must_use)]
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            BertTerm::Int(n) => { write!(f, "{}", n) }
+            BertTerm::BigInt(ref n) => { write!(f, "{}", n) }
+            BertTerm::Float(x) => { write!(f, "{}", x) }
+            BertTerm::Atom(ref s) => { write!(f, "{}", s) }
+            BertTerm::Tuple(ref ts) => {
+                write!(f, "{}", '{');
+                let mut first = true;
+                for t in ts {
+                    if !first { write!(f, ", "); }
+                    write!(f, "{}", t);
+                    first = false;
+                }
+                write!(f, "{}", '}')
+            }
+            BertTerm::List(ref ts) => {
+                write!(f, "[");
+                let mut first = true;
+                for t in ts {
+                    if !first { write!(f, ", "); }
+                    write!(f, "{}", t);
+                    first = false;
+                }
+                write!(f, "]")
+            }
+            BertTerm::Binary(ref bytes) => {
+                write!(f, "<<");
+                let mut first = true;
+                for b in bytes {
+                    if !first { write!(f, ", "); }
+                    write!(f, "{}", b);
+                    first = false;
+                }
+                write!(f, ">>")
+            }
+        }
+    }
+}
+
 
 #[derive(Debug)]
 pub enum BertError {
@@ -269,7 +315,8 @@ named!(bert_term<&[u8], BertTerm>,
             | new_float
             | small_big_int
             | large_big_int
-));
+       )
+);
 
 pub fn parse(i0: &[u8]) -> IResult<&[u8], BertTerm> {
     let (i1, _) = try_parse!(i0, bert_magic_number);
