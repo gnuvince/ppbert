@@ -1,7 +1,11 @@
 extern crate nom;
+extern crate num;
 
 use std::mem;
 use nom::{IResult, ErrorKind};
+use num::bigint;
+use num::bigint::ToBigInt;
+use num::traits::{Zero, One};
 
 static BERT_MAGIC_NUMBER: u8 = 131;
 static SMALL_INTEGER_EXT: u8 = 97;
@@ -14,6 +18,8 @@ static NIL_EXT: u8 = 106;
 static STRING_EXT: u8 = 107;
 static LIST_EXT: u8 = 108;
 static BINARY_EXT: u8 = 109;
+static SMALL_BIG_EXT: u8 = 110;
+static LARGE_BIG_EXT: u8 = 111;
 static ATOM_UTF8_EXT: u8 = 118;
 static SMALL_ATOM_UTF8_EXT: u8 = 119;
 static NEW_FLOAT_EXT: u8 = 70;
@@ -21,6 +27,7 @@ static NEW_FLOAT_EXT: u8 = 70;
 #[derive(Debug)]
 pub enum BertTerm {
     Int(i32),
+    BigInt(bigint::BigInt),
     Float(f64),
     Atom(String),
     Tuple(Vec<BertTerm>),
@@ -136,6 +143,37 @@ fn new_float(i0: &[u8]) -> IResult<&[u8], BertTerm> {
     IResult::Done(i2, BertTerm::Float(f))
 }
 
+fn compute_big_int(is_negative: bool, digits: &[u8]) -> bigint::BigInt {
+    let mut sum: bigint::BigInt = Zero::zero();
+    let mut pos: bigint::BigInt = One::one();
+    for d in digits {
+        let t = &pos * &(d.to_bigint().unwrap());
+        sum = sum + &t;
+        pos = pos * (256).to_bigint().unwrap();
+    }
+    if is_negative { sum = -sum; }
+    return sum;
+}
+
+fn small_big_int(i0: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i1, _) = try_parse!(i0, tag!([SMALL_BIG_EXT]));
+    let (i2, len) = try_parse!(i1, nom::be_u8);
+    let (i3, sign) = try_parse!(i2, nom::be_u8);
+    let (i4, digits) = try_parse!(i3, count!(nom::be_u8, len as usize));
+    let b = compute_big_int(sign == 1, &digits);
+    IResult::Done(i4, BertTerm::BigInt(b))
+}
+
+fn large_big_int(i0: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i1, _) = try_parse!(i0, tag!([LARGE_BIG_EXT]));
+    let (i2, len) = try_parse!(i1, nom::be_u32);
+    let (i3, sign) = try_parse!(i2, nom::be_u8);
+    let (i4, digits) = try_parse!(i3, count!(nom::be_u8, len as usize));
+    let b = compute_big_int(sign == 1, &digits);
+    IResult::Done(i4, BertTerm::BigInt(b))
+}
+
+
 named!(bert_term<&[u8], BertTerm>,
        alt!(small_integer
             | integer
@@ -150,6 +188,8 @@ named!(bert_term<&[u8], BertTerm>,
             | binary
             | old_float
             | new_float
+            | small_big_int
+            | large_big_int
 ));
 
 pub fn parse(i0: &[u8]) -> IResult<&[u8], BertTerm> {
