@@ -190,8 +190,8 @@ fn test_nil() {
 fn string_like_list(i0: &[u8]) -> IResult<&[u8], BertTerm> {
     let (i1, _) = try_parse!(i0, tag!([STRING_EXT]));
     let (i2, len) = try_parse!(i1, nom::be_u16);
-    let (i3, nums) = try_parse!(i2, count!(nom::be_u8, len as usize));
-    let elements = nums.into_iter().map(|n| BertTerm::Int(n as i32)).collect();
+    let (i3, nums) = try_parse!(i2, take!(len as usize));
+    let elements = nums.iter().map(|n| BertTerm::Int(*n as i32)).collect();
     IResult::Done(i3, BertTerm::List(elements))
 }
 
@@ -284,7 +284,7 @@ fn small_big_int(i0: &[u8]) -> IResult<&[u8], BertTerm> {
     let (i1, _) = try_parse!(i0, tag!([SMALL_BIG_EXT]));
     let (i2, len) = try_parse!(i1, nom::be_u8);
     let (i3, sign) = try_parse!(i2, nom::be_u8);
-    let (i4, digits) = try_parse!(i3, count!(nom::be_u8, len as usize));
+    let (i4, digits) = try_parse!(i3, take!(len as usize));
     let b = compute_big_int(sign == 1, &digits);
     IResult::Done(i4, BertTerm::BigInt(b))
 }
@@ -293,7 +293,7 @@ fn large_big_int(i0: &[u8]) -> IResult<&[u8], BertTerm> {
     let (i1, _) = try_parse!(i0, tag!([LARGE_BIG_EXT]));
     let (i2, len) = try_parse!(i1, nom::be_u32);
     let (i3, sign) = try_parse!(i2, nom::be_u8);
-    let (i4, digits) = try_parse!(i3, count!(nom::be_u8, len as usize));
+    let (i4, digits) = try_parse!(i3, take!(len as usize));
     let b = compute_big_int(sign == 1, &digits);
     IResult::Done(i4, BertTerm::BigInt(b))
 }
