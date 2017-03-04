@@ -89,10 +89,10 @@ pub enum BertError {
 
 named!(bert_magic_number, tag!([BERT_MAGIC_NUMBER]));
 
-fn small_integer(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([SMALL_INTEGER_EXT]));
-    let (i2, n) = try_parse!(i1, nom::be_u8);
-    IResult::Done(i2, BertTerm::Int(n as i32))
+fn small_integer(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([SMALL_INTEGER_EXT]));
+    let (i, n) = try_parse!(i, nom::be_u8);
+    IResult::Done(i, BertTerm::Int(n as i32))
 }
 
 #[test]
@@ -105,10 +105,10 @@ fn test_small_integer() {
 }
 
 
-fn integer(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([INTEGER_EXT]));
-    let (i2, n) = try_parse!(i1, nom::be_i32);
-    IResult::Done(i2, BertTerm::Int(n))
+fn integer(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([INTEGER_EXT]));
+    let (i, n) = try_parse!(i, nom::be_i32);
+    IResult::Done(i, BertTerm::Int(n))
 }
 
 
@@ -126,11 +126,11 @@ fn test_integer() {
 }
 
 
-fn atom(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([ATOM_EXT]));
-    let (i2, len) = try_parse!(i1, nom::be_u16);
-    let (i3, atom_name) = try_parse!(i2, take_str!(len));
-    IResult::Done(i3, BertTerm::Atom(atom_name.to_string()))
+fn atom(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([ATOM_EXT]));
+    let (i, len) = try_parse!(i, nom::be_u16);
+    let (i, atom_name) = try_parse!(i, take_str!(len));
+    IResult::Done(i, BertTerm::Atom(atom_name.to_string()))
 }
 
 #[test]
@@ -139,25 +139,25 @@ fn test_atom() {
     assert_eq!(atom(buf), IResult::Done(&b""[..], BertTerm::Atom("ab".to_string())));
 }
 
-fn small_atom_utf8(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([SMALL_ATOM_UTF8_EXT]));
-    let (i2, len) = try_parse!(i1, nom::be_u8);
-    let (i3, atom_name) = try_parse!(i2, take_str!(len));
-    IResult::Done(i3, BertTerm::Atom(atom_name.to_string()))
+fn small_atom_utf8(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([SMALL_ATOM_UTF8_EXT]));
+    let (i, len) = try_parse!(i, nom::be_u8);
+    let (i, atom_name) = try_parse!(i, take_str!(len));
+    IResult::Done(i, BertTerm::Atom(atom_name.to_string()))
 }
 
-fn atom_utf8(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([ATOM_UTF8_EXT]));
-    let (i2, len) = try_parse!(i1, nom::be_u16);
-    let (i3, atom_name) = try_parse!(i2, take_str!(len));
-    IResult::Done(i3, BertTerm::Atom(atom_name.to_string()))
+fn atom_utf8(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([ATOM_UTF8_EXT]));
+    let (i, len) = try_parse!(i, nom::be_u16);
+    let (i, atom_name) = try_parse!(i, take_str!(len));
+    IResult::Done(i, BertTerm::Atom(atom_name.to_string()))
 }
 
-fn small_tuple(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([SMALL_TUPLE_EXT]));
-    let (i2, arity) = try_parse!(i1, nom::be_u8);
-    let (i3, tuple) = try_parse!(i2, count!(bert_term, arity as usize));
-    IResult::Done(i3, BertTerm::Tuple(tuple))
+fn small_tuple(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([SMALL_TUPLE_EXT]));
+    let (i, arity) = try_parse!(i, nom::be_u8);
+    let (i, tuple) = try_parse!(i, count!(bert_term, arity as usize));
+    IResult::Done(i, BertTerm::Tuple(tuple))
 }
 
 #[test]
@@ -169,16 +169,16 @@ fn test_small_tuple() {
                                                   BertTerm::Int(42)])));
 }
 
-fn large_tuple(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([LARGE_TUPLE_EXT]));
-    let (i2, arity) = try_parse!(i1, nom::be_u32);
-    let (i3, tuple) = try_parse!(i2, count!(bert_term, arity as usize));
-    IResult::Done(i3, BertTerm::Tuple(tuple))
+fn large_tuple(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([LARGE_TUPLE_EXT]));
+    let (i, arity) = try_parse!(i, nom::be_u32);
+    let (i, tuple) = try_parse!(i, count!(bert_term, arity as usize));
+    IResult::Done(i, BertTerm::Tuple(tuple))
 }
 
-fn nil(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([NIL_EXT]));
-    IResult::Done(i1, BertTerm::List(vec![]))
+fn nil(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([NIL_EXT]));
+    IResult::Done(i, BertTerm::List(vec![]))
 }
 
 #[test]
@@ -187,12 +187,12 @@ fn test_nil() {
     assert_eq!(nil(buf), IResult::Done(&b""[..], BertTerm::List(vec![])));
 }
 
-fn string_like_list(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([STRING_EXT]));
-    let (i2, len) = try_parse!(i1, nom::be_u16);
-    let (i3, nums) = try_parse!(i2, take!(len as usize));
+fn string_like_list(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([STRING_EXT]));
+    let (i, len) = try_parse!(i, nom::be_u16);
+    let (i, nums) = try_parse!(i, take!(len as usize));
     let elements = nums.iter().map(|n| BertTerm::Int(*n as i32)).collect();
-    IResult::Done(i3, BertTerm::List(elements))
+    IResult::Done(i, BertTerm::List(elements))
 }
 
 #[test]
@@ -203,16 +203,16 @@ fn string_like_list_test() {
                IResult::Done(&b""[..], List(vec![Int(104), Int(101), Int(108), Int(108), Int(111)])));
 }
 
-fn list(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([LIST_EXT]));
-    let (i2, len) = try_parse!(i1, nom::be_u32);
-    let (i3, mut elements) = try_parse!(i2, count!(bert_term, len as usize));
-    let (i4, tail) = try_parse!(i3, bert_term);
+fn list(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([LIST_EXT]));
+    let (i, len) = try_parse!(i, nom::be_u32);
+    let (i, mut elements) = try_parse!(i, count!(bert_term, len as usize));
+    let (i, tail) = try_parse!(i, bert_term);
     match tail {
         BertTerm::List(_) => (),
         last_term => { elements.push(last_term); }
     };
-    IResult::Done(i4, BertTerm::List(elements))
+    IResult::Done(i, BertTerm::List(elements))
 }
 
 #[test]
@@ -235,11 +235,11 @@ fn test_list() {
 }
 
 
-fn binary(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([BINARY_EXT]));
-    let (i2, len) = try_parse!(i1, nom::be_u32);
-    let (i3, elements) = try_parse!(i2, count!(nom::be_u8, len as usize));
-    IResult::Done(i3, BertTerm::Binary(elements))
+fn binary(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([BINARY_EXT]));
+    let (i, len) = try_parse!(i, nom::be_u32);
+    let (i, elements) = try_parse!(i, count!(nom::be_u8, len as usize));
+    IResult::Done(i, BertTerm::Binary(elements))
 }
 
 #[test]
@@ -251,21 +251,21 @@ fn binary_test() {
 fn is_zero(b: u8) -> bool { b == 0 }
 fn is_non_zero(b: u8) -> bool { b != 0 }
 
-fn old_float(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([FLOAT_EXT]));
-    let (i2, bytes) = try_parse!(i1, take_while!(is_non_zero));
-    let (i3, _) = try_parse!(i2, take_while!(is_zero));
+fn old_float(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([FLOAT_EXT]));
+    let (i, bytes) = try_parse!(i, take_while!(is_non_zero));
+    let (i, _) = try_parse!(i, take_while!(is_zero));
     let mut s = String::new();
     for b in bytes { s.push(*b as char); }
     let f = s.parse::<f64>().unwrap();
-    IResult::Done(i3, BertTerm::Float(f))
+    IResult::Done(i, BertTerm::Float(f))
 }
 
-fn new_float(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([NEW_FLOAT_EXT]));
-    let (i2, raw_bytes) = try_parse!(i1, nom::be_u64);
+fn new_float(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([NEW_FLOAT_EXT]));
+    let (i, raw_bytes) = try_parse!(i, nom::be_u64);
     let f: f64 = unsafe { mem::transmute(raw_bytes) };
-    IResult::Done(i2, BertTerm::Float(f))
+    IResult::Done(i, BertTerm::Float(f))
 }
 
 fn compute_big_int(is_negative: bool, digits: &[u8]) -> bigint::BigInt {
@@ -280,22 +280,22 @@ fn compute_big_int(is_negative: bool, digits: &[u8]) -> bigint::BigInt {
     return sum;
 }
 
-fn small_big_int(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([SMALL_BIG_EXT]));
-    let (i2, len) = try_parse!(i1, nom::be_u8);
-    let (i3, sign) = try_parse!(i2, nom::be_u8);
-    let (i4, digits) = try_parse!(i3, take!(len as usize));
+fn small_big_int(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([SMALL_BIG_EXT]));
+    let (i, len) = try_parse!(i, nom::be_u8);
+    let (i, sign) = try_parse!(i, nom::be_u8);
+    let (i, digits) = try_parse!(i, take!(len as usize));
     let b = compute_big_int(sign == 1, &digits);
-    IResult::Done(i4, BertTerm::BigInt(b))
+    IResult::Done(i, BertTerm::BigInt(b))
 }
 
-fn large_big_int(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, tag!([LARGE_BIG_EXT]));
-    let (i2, len) = try_parse!(i1, nom::be_u32);
-    let (i3, sign) = try_parse!(i2, nom::be_u8);
-    let (i4, digits) = try_parse!(i3, take!(len as usize));
+fn large_big_int(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, tag!([LARGE_BIG_EXT]));
+    let (i, len) = try_parse!(i, nom::be_u32);
+    let (i, sign) = try_parse!(i, nom::be_u8);
+    let (i, digits) = try_parse!(i, take!(len as usize));
     let b = compute_big_int(sign == 1, &digits);
-    IResult::Done(i4, BertTerm::BigInt(b))
+    IResult::Done(i, BertTerm::BigInt(b))
 }
 
 
@@ -318,8 +318,8 @@ named!(bert_term<&[u8], BertTerm>,
        )
 );
 
-pub fn parse(i0: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i1, _) = try_parse!(i0, bert_magic_number);
-    let (i2, t) = try_parse!(i1, bert_term);
-    IResult::Done(i2, t)
+pub fn parse(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, bert_magic_number);
+    let (i, t) = try_parse!(i, bert_term);
+    IResult::Done(i, t)
 }
