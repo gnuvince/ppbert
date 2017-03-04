@@ -95,15 +95,6 @@ fn small_integer(i: &[u8]) -> IResult<&[u8], BertTerm> {
     IResult::Done(i, BertTerm::Int(n as i32))
 }
 
-#[test]
-fn test_small_integer() {
-    for i in 0 .. u8::max_value() {
-        let buf = &[SMALL_INTEGER_EXT, i];
-        let t = small_integer(buf);
-        assert_eq!(t, IResult::Done(&b""[..], BertTerm::Int(i as i32)));
-    }
-}
-
 
 fn integer(i: &[u8]) -> IResult<&[u8], BertTerm> {
     let (i, _) = try_parse!(i, tag!([INTEGER_EXT]));
@@ -112,31 +103,12 @@ fn integer(i: &[u8]) -> IResult<&[u8], BertTerm> {
 }
 
 
-#[test]
-fn test_integer() {
-    let buf0 = &[INTEGER_EXT, 0, 0, 0, 1];
-    let buf1 = &[INTEGER_EXT, 0, 0, 1, 0];
-    let buf2 = &[INTEGER_EXT, 0, 1, 0, 0];
-    let buf3 = &[INTEGER_EXT, 1, 0, 0, 0];
-
-    assert_eq!(integer(buf0), IResult::Done(&b""[..], BertTerm::Int(1)));
-    assert_eq!(integer(buf1), IResult::Done(&b""[..], BertTerm::Int(1 << 8)));
-    assert_eq!(integer(buf2), IResult::Done(&b""[..], BertTerm::Int(1 << 16)));
-    assert_eq!(integer(buf3), IResult::Done(&b""[..], BertTerm::Int(1 << 24)));
-}
-
 
 fn atom(i: &[u8]) -> IResult<&[u8], BertTerm> {
     let (i, _) = try_parse!(i, tag!([ATOM_EXT]));
     let (i, len) = try_parse!(i, nom::be_u16);
     let (i, atom_name) = try_parse!(i, take_str!(len));
     IResult::Done(i, BertTerm::Atom(atom_name.to_string()))
-}
-
-#[test]
-fn test_atom() {
-    let buf = &[ATOM_EXT, 0, 2, b'a', b'b'];
-    assert_eq!(atom(buf), IResult::Done(&b""[..], BertTerm::Atom("ab".to_string())));
 }
 
 fn small_atom_utf8(i: &[u8]) -> IResult<&[u8], BertTerm> {
@@ -160,15 +132,6 @@ fn small_tuple(i: &[u8]) -> IResult<&[u8], BertTerm> {
     IResult::Done(i, BertTerm::Tuple(tuple))
 }
 
-#[test]
-fn test_small_tuple() {
-    let buf = &[SMALL_TUPLE_EXT, 2, ATOM_EXT, 0, 2, b'o', b'k', SMALL_INTEGER_EXT, 42];
-    assert_eq!(small_tuple(buf),
-               IResult::Done(&b""[..],
-                             BertTerm::Tuple(vec![BertTerm::Atom("ok".to_string()),
-                                                  BertTerm::Int(42)])));
-}
-
 fn large_tuple(i: &[u8]) -> IResult<&[u8], BertTerm> {
     let (i, _) = try_parse!(i, tag!([LARGE_TUPLE_EXT]));
     let (i, arity) = try_parse!(i, nom::be_u32);
@@ -181,26 +144,12 @@ fn nil(i: &[u8]) -> IResult<&[u8], BertTerm> {
     IResult::Done(i, BertTerm::List(vec![]))
 }
 
-#[test]
-fn test_nil() {
-    let buf = &[NIL_EXT];
-    assert_eq!(nil(buf), IResult::Done(&b""[..], BertTerm::List(vec![])));
-}
-
 fn string_like_list(i: &[u8]) -> IResult<&[u8], BertTerm> {
     let (i, _) = try_parse!(i, tag!([STRING_EXT]));
     let (i, len) = try_parse!(i, nom::be_u16);
     let (i, nums) = try_parse!(i, take!(len as usize));
     let elements = nums.iter().map(|n| BertTerm::Int(*n as i32)).collect();
     IResult::Done(i, BertTerm::List(elements))
-}
-
-#[test]
-fn string_like_list_test() {
-    use self::BertTerm::*;
-    let buf = &[STRING_EXT, 0, 5, b'h', b'e', b'l', b'l', b'o'];
-    assert_eq!(string_like_list(buf),
-               IResult::Done(&b""[..], List(vec![Int(104), Int(101), Int(108), Int(108), Int(111)])));
 }
 
 fn list(i: &[u8]) -> IResult<&[u8], BertTerm> {
@@ -215,37 +164,12 @@ fn list(i: &[u8]) -> IResult<&[u8], BertTerm> {
     IResult::Done(i, BertTerm::List(elements))
 }
 
-#[test]
-fn test_list() {
-    use self::BertTerm::*;
-    let buf0 = &[
-        LIST_EXT, 0, 0, 0, 2,
-        SMALL_INTEGER_EXT, 42,
-        INTEGER_EXT, 0, 1, 0, 0,
-        NIL_EXT
-    ];
-    let buf1 = &[
-        LIST_EXT, 0, 0, 0, 2,
-        SMALL_INTEGER_EXT, 42,
-        INTEGER_EXT, 0, 1, 0, 0,
-        SMALL_INTEGER_EXT, 84
-    ];
-    assert_eq!(list(buf0), IResult::Done(&b""[..], List(vec![Int(42), Int(65536)])));
-    assert_eq!(list(buf1), IResult::Done(&b""[..], List(vec![Int(42), Int(65536), Int(84)])));
-}
-
 
 fn binary(i: &[u8]) -> IResult<&[u8], BertTerm> {
     let (i, _) = try_parse!(i, tag!([BINARY_EXT]));
     let (i, len) = try_parse!(i, nom::be_u32);
     let (i, elements) = try_parse!(i, count!(nom::be_u8, len as usize));
     IResult::Done(i, BertTerm::Binary(elements))
-}
-
-#[test]
-fn binary_test() {
-    let buf = &[BINARY_EXT, 0, 0, 0, 4, 1, 3, 3, 7];
-    assert_eq!(binary(buf), IResult::Done(&b""[..], BertTerm::Binary(vec![1,3,3,7])));
 }
 
 fn is_zero(b: u8) -> bool { b == 0 }
@@ -322,4 +246,92 @@ pub fn parse(i: &[u8]) -> IResult<&[u8], BertTerm> {
     let (i, _) = try_parse!(i, bert_magic_number);
     let (i, t) = try_parse!(i, bert_term);
     IResult::Done(i, t)
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_small_integer() {
+        for i in 0 .. u8::max_value() {
+            let buf = &[SMALL_INTEGER_EXT, i];
+            let t = small_integer(buf);
+            assert_eq!(t, IResult::Done(&b""[..], BertTerm::Int(i as i32)));
+        }
+    }
+
+    #[test]
+    fn test_integer() {
+        let buf0 = &[INTEGER_EXT, 0, 0, 0, 1];
+        let buf1 = &[INTEGER_EXT, 0, 0, 1, 0];
+        let buf2 = &[INTEGER_EXT, 0, 1, 0, 0];
+        let buf3 = &[INTEGER_EXT, 1, 0, 0, 0];
+
+        assert_eq!(integer(buf0), IResult::Done(&b""[..], BertTerm::Int(1)));
+        assert_eq!(integer(buf1), IResult::Done(&b""[..], BertTerm::Int(1 << 8)));
+        assert_eq!(integer(buf2), IResult::Done(&b""[..], BertTerm::Int(1 << 16)));
+        assert_eq!(integer(buf3), IResult::Done(&b""[..], BertTerm::Int(1 << 24)));
+    }
+
+    #[test]
+    fn test_atom() {
+        let buf = &[ATOM_EXT, 0, 2, b'a', b'b'];
+        assert_eq!(atom(buf), IResult::Done(&b""[..], BertTerm::Atom("ab".to_string())));
+    }
+
+
+    #[test]
+    fn test_small_tuple() {
+        let buf = &[SMALL_TUPLE_EXT, 2, ATOM_EXT, 0, 2, b'o', b'k', SMALL_INTEGER_EXT, 42];
+        assert_eq!(small_tuple(buf),
+                   IResult::Done(&b""[..],
+                                 BertTerm::Tuple(vec![BertTerm::Atom("ok".to_string()),
+                                                      BertTerm::Int(42)])));
+    }
+
+
+    #[test]
+    fn test_nil() {
+        let buf = &[NIL_EXT];
+        assert_eq!(nil(buf), IResult::Done(&b""[..], BertTerm::List(vec![])));
+    }
+
+
+    #[test]
+    fn string_like_list_test() {
+        use self::BertTerm::*;
+        let buf = &[STRING_EXT, 0, 5, b'h', b'e', b'l', b'l', b'o'];
+        assert_eq!(string_like_list(buf),
+                   IResult::Done(&b""[..], List(vec![Int(104), Int(101), Int(108), Int(108), Int(111)])));
+    }
+
+
+    #[test]
+    fn test_list() {
+        use self::BertTerm::*;
+        let buf0 = &[
+            LIST_EXT, 0, 0, 0, 2,
+            SMALL_INTEGER_EXT, 42,
+            INTEGER_EXT, 0, 1, 0, 0,
+            NIL_EXT
+        ];
+        let buf1 = &[
+            LIST_EXT, 0, 0, 0, 2,
+            SMALL_INTEGER_EXT, 42,
+            INTEGER_EXT, 0, 1, 0, 0,
+            SMALL_INTEGER_EXT, 84
+        ];
+        assert_eq!(list(buf0), IResult::Done(&b""[..], List(vec![Int(42), Int(65536)])));
+        assert_eq!(list(buf1), IResult::Done(&b""[..], List(vec![Int(42), Int(65536), Int(84)])));
+    }
+
+
+    #[test]
+    fn binary_test() {
+        let buf = &[BINARY_EXT, 0, 0, 0, 4, 1, 3, 3, 7];
+        assert_eq!(binary(buf), IResult::Done(&b""[..], BertTerm::Binary(vec![1,3,3,7])));
+    }
+
 }
