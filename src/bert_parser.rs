@@ -34,6 +34,7 @@ pub enum BertTerm {
     Atom(String),
     Tuple(Vec<BertTerm>),
     List(Vec<BertTerm>),
+    String(Vec<u8>),
     Binary(Vec<u8>)
 }
 
@@ -65,6 +66,17 @@ impl fmt::Display for BertTerm {
                     first = false;
                 }
                 write!(f, "]")
+            }
+            BertTerm::String(ref bytes) => {
+                write!(f, "\"");
+                for &b in bytes {
+                    if b >= 0x20 && b <= 0x7e {
+                        write!(f, "{}", b as char);
+                    } else {
+                        write!(f, "\\x{:x}", b);
+                    }
+                }
+                write!(f, "\"")
             }
             BertTerm::Binary(ref bytes) => {
                 write!(f, "<<");
@@ -144,12 +156,11 @@ fn nil(i: &[u8]) -> IResult<&[u8], BertTerm> {
     IResult::Done(i, BertTerm::List(vec![]))
 }
 
-fn string_like_list(i: &[u8]) -> IResult<&[u8], BertTerm> {
+fn string(i: &[u8]) -> IResult<&[u8], BertTerm> {
     let (i, _) = try_parse!(i, tag!([STRING_EXT]));
     let (i, len) = try_parse!(i, nom::be_u16);
-    let (i, nums) = try_parse!(i, take!(len as usize));
-    let elements = nums.iter().map(|n| BertTerm::Int(*n as i32)).collect();
-    IResult::Done(i, BertTerm::List(elements))
+    let (i, bytes) = try_parse!(i, count!(nom::be_u8, len as usize));
+    IResult::Done(i, BertTerm::String(bytes))
 }
 
 fn list(i: &[u8]) -> IResult<&[u8], BertTerm> {
@@ -233,7 +244,7 @@ named!(bert_term<&[u8], BertTerm>,
             | large_tuple
             | nil
             | list
-            | string_like_list
+            | string
             | binary
             | old_float
             | new_float
@@ -300,11 +311,11 @@ mod tests {
 
 
     #[test]
-    fn string_like_list_test() {
+    fn string_test() {
         use self::BertTerm::*;
         let buf = &[STRING_EXT, 0, 5, b'h', b'e', b'l', b'l', b'o'];
-        assert_eq!(string_like_list(buf),
-                   IResult::Done(&b""[..], List(vec![Int(104), Int(101), Int(108), Int(108), Int(111)])));
+        assert_eq!(string(buf),
+                   IResult::Done(&b""[..], String(vec![104, 101, 108, 108, 111])));
     }
 
 
