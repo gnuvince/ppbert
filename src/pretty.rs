@@ -2,9 +2,9 @@ use ::bert_parser::BertTerm;
 use ::bert_parser::BertTerm::*;
 
 const INDENT_WIDTH: usize = 2;
+const MAX_TERMS_PER_LINE: usize = 4;
 
 pub fn print(term: &BertTerm, indent_level: usize) {
-    indent(indent_level);
     match *term {
         Int(n) => {
             print!("{}", n);
@@ -23,29 +23,11 @@ pub fn print(term: &BertTerm, indent_level: usize) {
         }
 
         Tuple(ref terms) => {
-            println!("{{");
-            let mut is_first = true;
-            for term in terms {
-                if !is_first { println!(",") }
-                print(term, indent_level + 1);
-                is_first = false;
-            }
-            println!();
-            indent(indent_level);
-            print!("}}");
+            print_collection(terms, indent_level, '{', '}');
         }
 
         List(ref terms) => {
-            println!("[");
-            let mut is_first = true;
-            for term in terms {
-                if !is_first { println!(",") }
-                print(term, indent_level + 1);
-                is_first = false;
-            }
-            println!();
-            indent(indent_level);
-            print!("]");
+            print_collection(terms, indent_level, '[', ']');
         }
 
         String(ref bytes) => {
@@ -53,7 +35,7 @@ pub fn print(term: &BertTerm, indent_level: usize) {
             for b in bytes {
                 print!("{}", *b as char);
             }
-            println!("\"");
+            print!("\"");
         }
 
         Binary(ref bytes) => {
@@ -62,17 +44,39 @@ pub fn print(term: &BertTerm, indent_level: usize) {
                 for b in bytes {
                     print!("{}", *b as char);
                 }
-                println!("\">>");
+                print!("\">>");
             } else {
                 print!("<<");
                 for b in bytes {
                     print!("{:x}", *b);
                     print!(",");
                 }
-                println!(">>");
+                print!(">>");
             }
         }
     }
+}
+
+fn print_collection(terms: &[BertTerm], level: usize, open: char, close: char) {
+    let is_single_line = print_on_single_line(terms);
+
+    print!("{}", open);
+
+    let mut is_first = true;
+    for t in terms {
+        if !is_first { print!(", "); }
+        if !is_single_line {
+            println!();
+            indent(level + 1);
+            print(t, level + 1);
+        } else {
+            print(t, level + 1);
+        }
+        is_first = false;
+    }
+
+    if !is_single_line { println!(); indent(level); }
+    print!("{}", close);
 }
 
 fn indent(level: usize) {
@@ -83,4 +87,16 @@ fn indent(level: usize) {
 
 fn is_printable(b: u8) -> bool {
     b >= 0x20 && b <= 0x7e
+}
+
+fn is_basic(t: &BertTerm) -> bool {
+    match *t {
+        Int(_) | BigInt(_) | Float(_) | Atom(_) | String(_) | Binary(_) => true,
+        List(_) | Tuple(_) => false
+    }
+}
+
+fn print_on_single_line(terms: &[BertTerm]) -> bool {
+    terms.len() <= MAX_TERMS_PER_LINE &&
+        terms.iter().all(is_basic)
 }
