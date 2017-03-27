@@ -3,6 +3,7 @@ extern crate nom;
 extern crate num;
 
 mod bert_parser;
+mod pretty;
 
 use std::io;
 use std::io::Read;
@@ -16,7 +17,8 @@ fn main() {
     let _ = stdin.read_to_end(&mut buf);
     match bert_parser::parse(&buf[..]) {
         IResult::Done(rest, ref term) if rest.is_empty() => {
-            println!("{}", term);
+            //println!("{}", term);
+            pretty::print(&term, 0);
         }
         IResult::Done(rest, _) => { println!("input not all consumed, remaining: {:?}", rest); }
         IResult::Error(e) => { println!("error: {:?}", e); }
