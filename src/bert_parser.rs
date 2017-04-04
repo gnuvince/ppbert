@@ -38,6 +38,15 @@ pub enum BertTerm {
     Binary(Vec<u8>)
 }
 
+fn fmt_separated_by<T: fmt::Display>(f: &mut fmt::Formatter, terms: &[T], sep: &str) {
+    let mut first = true;
+    for t in terms {
+        if !first { let _ = write!(f, "{}", sep); }
+        let _ = write!(f, "{}", t);
+        first = false;
+    }
+}
+
 
 impl fmt::Display for BertTerm {
     #[allow(unused_must_use)]
@@ -49,22 +58,13 @@ impl fmt::Display for BertTerm {
             BertTerm::Atom(ref s) => { write!(f, "{}", s) }
             BertTerm::Tuple(ref ts) => {
                 write!(f, "{}", '{');
-                let mut first = true;
-                for t in ts {
-                    if !first { write!(f, ", "); }
-                    write!(f, "{}", t);
-                    first = false;
-                }
+                fmt_separated_by(f, ts, ", ");
                 write!(f, "{}", '}')
             }
             BertTerm::List(ref ts) => {
                 write!(f, "[");
                 let mut first = true;
-                for t in ts {
-                    if !first { write!(f, ", "); }
-                    write!(f, "{}", t);
-                    first = false;
-                }
+                fmt_separated_by(f, ts, ", ");
                 write!(f, "]")
             }
             BertTerm::String(ref bytes) => {
@@ -80,12 +80,7 @@ impl fmt::Display for BertTerm {
             }
             BertTerm::Binary(ref bytes) => {
                 write!(f, "<<");
-                let mut first = true;
-                for b in bytes {
-                    if !first { write!(f, ", "); }
-                    write!(f, "{}", b);
-                    first = false;
-                }
+                fmt_separated_by(f, bytes, ", ");
                 write!(f, ">>")
             }
         }
