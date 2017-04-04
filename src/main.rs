@@ -1,14 +1,13 @@
-#[macro_use]
 extern crate nom;
-extern crate num;
-
-mod bert_parser;
-mod pretty;
+extern crate ppbert;
 
 use std::io;
 use std::io::Read;
 
 use nom::IResult;
+
+use ppbert::bert_parser;
+use ppbert::pretty;
 
 fn main() {
     let mut stdin = io::stdin();

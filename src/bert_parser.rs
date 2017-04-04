@@ -94,6 +94,13 @@ pub enum BertError {
     InvalidMagicNumber
 }
 
+
+pub fn parse(i: &[u8]) -> IResult<&[u8], BertTerm> {
+    let (i, _) = try_parse!(i, bert_magic_number);
+    let (i, t) = try_parse!(i, bert_term);
+    IResult::Done(i, t)
+}
+
 named!(bert_magic_number, tag!([BERT_MAGIC_NUMBER]));
 
 fn small_integer(i: &[u8]) -> IResult<&[u8], BertTerm> {
@@ -247,12 +254,6 @@ named!(bert_term<&[u8], BertTerm>,
             | large_big_int
        )
 );
-
-pub fn parse(i: &[u8]) -> IResult<&[u8], BertTerm> {
-    let (i, _) = try_parse!(i, bert_magic_number);
-    let (i, t) = try_parse!(i, bert_term);
-    IResult::Done(i, t)
-}
 
 
 #[cfg(test)]
