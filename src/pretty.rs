@@ -48,7 +48,7 @@ pub fn print(term: &BertTerm, indent_level: usize) {
             } else {
                 print!("<<");
                 for b in bytes {
-                    print!("{:x}", *b);
+                    print!("{}", *b);
                     print!(",");
                 }
                 print!(">>");
