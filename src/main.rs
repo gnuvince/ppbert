@@ -13,7 +13,10 @@ fn main() {
     let _ = stdin.read_to_end(&mut buf);
     let mut parser = parser::Parser::new(buf);
     match parser.parse() {
-        Ok(ref term) => { pretty::print(term, 0); }
+        Ok(ref term) => {
+            pretty::print(term, 0);
+            println!();
+        }
         Err(error) => { println!("ppbert: {}", error); }
     }
 }
