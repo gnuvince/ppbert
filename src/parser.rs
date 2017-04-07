@@ -112,19 +112,14 @@ impl Parser {
 
     fn old_float(&mut self) -> Result<BertTerm> {
         let mut s = String::new();
-        loop {
-            let c = self.eat_char()?;
-            if c == '\x00' {
-                break;
-            }
-            s.push(c);
+        while self.peek()? != 0 {
+            s.push(self.eat_char()?);
         }
 
-        loop {
-            if self.eat_u8()? == 0 {
-                break;
-            }
+        while self.peek()? == 0 {
+            let _ = self.eat_u8()?;
         }
+
         s.parse::<f64>()
             .map_err(|_| BertError::InvalidFloat)
             .map(|f| BertTerm::Float(f))
