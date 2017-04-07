@@ -1,7 +1,7 @@
 extern crate ppbert;
 
 use std::io;
-use std::io::Read;
+use std::io::{Read, Write};
 
 use ppbert::parser;
 use ppbert::pretty;
@@ -17,6 +17,8 @@ fn main() {
             pretty::print(term, 0);
             println!();
         }
-        Err(error) => { println!("ppbert: {}", error); }
+        Err(error) => {
+            let _ = writeln!(&mut io::stderr(), "ppbert: {}", error);
+        }
     }
 }

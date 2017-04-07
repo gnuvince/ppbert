@@ -96,7 +96,7 @@ impl Parser {
             let len = self.eat_u32_be()?;
             self.bigint(len as usize)
         } else {
-            Err(BertError::InvalidTag)
+            Err(BertError::InvalidTag(tag))
         }
     }
 

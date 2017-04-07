@@ -5,7 +5,7 @@ use std::error::Error;
 #[derive(Debug)]
 pub enum BertError {
     InvalidMagicNumber,
-    InvalidTag,
+    InvalidTag(u8),
     InvalidFloat,
     InvalidUTF8Atom,
     EOF
@@ -16,7 +16,12 @@ pub type Result<T> = result::Result<T, BertError>;
 
 impl fmt::Display for BertError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.description())
+        match *self {
+            BertError::InvalidTag(b) =>
+                write!(f, "{}, {}", self.description(), b),
+            _ =>
+                write!(f, "{}", self.description())
+        }
     }
 }
 
@@ -26,7 +31,7 @@ impl Error for BertError {
         use self::BertError::*;
         match *self {
             InvalidMagicNumber => "invalid magic number",
-            InvalidTag => "invalid tag",
+            InvalidTag(_) => "invalid tag",
             InvalidFloat => "invalid float",
             InvalidUTF8Atom => "utf8 atom is not correctly encoded",
             EOF => "no more data is available",
