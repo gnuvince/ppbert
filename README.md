@@ -2,7 +2,7 @@
 
 A simple command-line utility to pretty print structures encoded using
 Erlang's [External Term Format](http://erlang.org/doc/apps/erts/erl_ext_dist.html).
-The input is read from *stdin* and output on *stdout*, making ppbert
+The input is read from *stdin* and written to *stdout*, making ppbert
 a good candidate for shell pipelines.
 
 At the moment, ppbert supports only a subset of the field types of the
