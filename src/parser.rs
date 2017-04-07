@@ -45,15 +45,17 @@ impl Parser {
 
     // Parsers
     fn magic_number(&mut self) -> Result<()> {
+        let offset = self.pos;
         let magic = self.eat_u8()?;
         if magic != BERT_MAGIC_NUMBER {
-            return Err(BertError::InvalidMagicNumber);
+            return Err(BertError::InvalidMagicNumber(offset));
         } else {
             return Ok(());
         }
     }
 
     fn bert_term(&mut self) -> Result<BertTerm> {
+        let offset = self.pos;
         let tag = self.eat_u8()?;
         if tag == SMALL_INTEGER_EXT {
             self.small_integer()
@@ -96,7 +98,7 @@ impl Parser {
             let len = self.eat_u32_be()?;
             self.bigint(len as usize)
         } else {
-            Err(BertError::InvalidTag(tag))
+            Err(BertError::InvalidTag(offset, tag))
         }
     }
 
@@ -111,6 +113,7 @@ impl Parser {
     }
 
     fn old_float(&mut self) -> Result<BertTerm> {
+        let offset = self.pos;
         let mut s = String::new();
         while self.peek()? != 0 {
             s.push(self.eat_char()?);
@@ -121,7 +124,7 @@ impl Parser {
         }
 
         s.parse::<f64>()
-            .map_err(|_| BertError::InvalidFloat)
+            .map_err(|_| BertError::InvalidFloat(offset))
             .map(|f| BertTerm::Float(f))
     }
 
@@ -140,13 +143,14 @@ impl Parser {
     }
 
     fn atom_utf8(&mut self, len: usize) -> Result<BertTerm> {
+        let offset = self.pos;
         let mut buf = Vec::with_capacity(len);
         for _ in 0 .. len {
             buf.push(self.eat_u8()?);
         }
         String::from_utf8(buf)
             .map(|s| BertTerm::Atom(s))
-            .map_err(|_| BertError::InvalidUTF8Atom)
+            .map_err(|_| BertError::InvalidUTF8Atom(offset))
     }
 
     fn tuple(&mut self, len: usize) -> Result<BertTerm> {
@@ -216,7 +220,7 @@ impl Parser {
 
     fn peek_at(&self, offset: usize) -> Result<u8> {
         if self.eof() {
-            return Err(BertError::EOF);
+            return Err(BertError::EOF(offset));
         } else {
             return Ok(self.contents[offset]);
         }
