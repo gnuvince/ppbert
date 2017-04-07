@@ -8,6 +8,7 @@ pub enum BertError {
     InvalidTag(usize, u8),
     InvalidFloat(usize),
     InvalidUTF8Atom(usize),
+    ExtraData(usize),
     EOF(usize)
 }
 
@@ -16,10 +17,11 @@ impl BertError {
         use self::BertError::*;
         match *self {
             InvalidMagicNumber(offset)
-                | InvalidTag(offset, _)
-                | InvalidFloat(offset)
-                | InvalidUTF8Atom(offset)
-                | EOF(offset) => offset
+            | InvalidTag(offset, _)
+            | InvalidFloat(offset)
+            | InvalidUTF8Atom(offset)
+            | ExtraData(offset)
+            | EOF(offset) => offset
         }
     }
 
@@ -55,6 +57,7 @@ impl Error for BertError {
             InvalidTag(_, _) => "invalid tag",
             InvalidFloat(_) => "invalid float",
             InvalidUTF8Atom(_) => "utf8 atom is not correctly encoded",
+            ExtraData(_) => "extra data after the BERT term",
             EOF(_) => "no more data is available",
         }
     }

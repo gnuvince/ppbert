@@ -40,7 +40,12 @@ impl Parser {
 
     pub fn parse(&mut self) -> Result<BertTerm> {
         let () = self.magic_number()?;
-        return self.bert_term();
+        let term = self.bert_term()?;
+        if self.pos == self.contents.len() {
+            return Ok(term);
+        } else {
+            return Err(BertError::ExtraData(self.pos));
+        }
     }
 
     // Parsers
@@ -115,11 +120,11 @@ impl Parser {
     fn old_float(&mut self) -> Result<BertTerm> {
         let offset = self.pos;
         let mut s = String::new();
-        while self.peek()? != 0 {
+        while !self.eof() && self.peek()? != 0 {
             s.push(self.eat_char()?);
         }
 
-        while self.peek()? == 0 {
+        while !self.eof() && self.peek()? == 0 {
             let _ = self.eat_u8()?;
         }
 
@@ -211,7 +216,7 @@ impl Parser {
 
     // Low-level parsing methods
     fn eof(&self) -> bool {
-        self.pos > self.contents.len()
+        self.pos >= self.contents.len()
     }
 
     fn peek(&self) -> Result<u8> {
