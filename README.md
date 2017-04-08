@@ -74,6 +74,5 @@ sys     0m0.432s
 
 - Add flags to control the pretty printing (e.g., indentation width,
   number of basic values on a single line, etc.).
-- Do latin-1 encoding for atoms and strings.
 - Add a [jq](https://stedolan.github.io/jq/)-like query language.
 - Write a man page.
