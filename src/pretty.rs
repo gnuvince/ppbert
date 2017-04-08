@@ -1,5 +1,5 @@
-use ::bertterm::BertTerm;
-use ::bertterm::BertTerm::*;
+use bertterm::BertTerm;
+use bertterm::BertTerm::*;
 
 const INDENT_WIDTH: usize = 2;
 const MAX_TERMS_PER_LINE: usize = 4;

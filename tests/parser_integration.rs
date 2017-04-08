@@ -124,6 +124,17 @@ fn atom() {
         Err(BertError::ExtraData(_)) => true,
         _ => false
     });
+
+    // latin1 (0xe9 = é)
+    assert!(match p(b"\x83\x64\x00\x04caf\xe9") {
+        Ok(BertTerm::Atom(ref s)) => s == "café",
+        _ => false
+    });
+
+    assert!(match p(b"\x83\x73\x04caf\xe9") {
+        Ok(BertTerm::Atom(ref s)) => s == "café",
+        _ => false
+    });
 }
 
 #[test]
