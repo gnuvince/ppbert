@@ -1,10 +1,11 @@
 [package]
 name = "ppbert"
-description = "simple pretty printer for Erlang's External Term Format"
+description = "Simple pretty printer for Erlang's External Term Format"
 homepage = "https://github.com/gnuvince/ppbert"
-version = "0.1.0"
+version = "0.1.1"
 license = "MIT"
 authors = ["Vincent Foley <vfoley@gmail.com>"]
 
 [dependencies]
 num = "0.1"
+encoding = "0.2.33"

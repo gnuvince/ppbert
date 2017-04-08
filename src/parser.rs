@@ -1,10 +1,11 @@
-extern crate num;
-
 use std::mem;
 
 use num::bigint;
 use num::bigint::ToBigInt;
 use num::traits::{Zero, One};
+
+use encoding::{Encoding, DecoderTrap};
+use encoding::all::ISO_8859_1;
 
 use bertterm::BertTerm;
 use error::{Result, BertError};
@@ -140,11 +141,14 @@ impl Parser {
     }
 
     fn atom(&mut self, len: usize) -> Result<BertTerm> {
-        let mut s = String::with_capacity(len);
+        let offset = self.pos;
+        let mut bytes: Vec<u8> = Vec::with_capacity(len);
         for _ in 0 .. len {
-            s.push(self.eat_char()?);
+            bytes.push(self.eat_u8()?);
         }
-        Ok(BertTerm::Atom(s))
+        ISO_8859_1.decode(&bytes, DecoderTrap::Strict)
+            .map(|s| BertTerm::Atom(s))
+            .map_err(|_| BertError::InvalidLatin1Atom(offset))
     }
 
     fn atom_utf8(&mut self, len: usize) -> Result<BertTerm> {
