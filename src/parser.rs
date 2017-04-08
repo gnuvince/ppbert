@@ -42,7 +42,7 @@ impl Parser {
     pub fn parse(&mut self) -> Result<BertTerm> {
         let () = self.magic_number()?;
         let term = self.bert_term()?;
-        if self.pos == self.contents.len() {
+        if self.eof() {
             return Ok(term);
         } else {
             return Err(BertError::ExtraData(self.pos));
