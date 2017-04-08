@@ -10,23 +10,23 @@ use encoding::all::ISO_8859_1;
 use bertterm::BertTerm;
 use error::{Result, BertError};
 
-static BERT_MAGIC_NUMBER: u8 = 131;
-static SMALL_INTEGER_EXT: u8 = 97;
-static INTEGER_EXT: u8 = 98;
-static FLOAT_EXT: u8 = 99;
-static ATOM_EXT: u8 = 100;
-static SMALL_ATOM_EXT: u8 = 115;
-static SMALL_TUPLE_EXT: u8 = 104;
-static LARGE_TUPLE_EXT: u8 = 105;
-static NIL_EXT: u8 = 106;
-static STRING_EXT: u8 = 107;
-static LIST_EXT: u8 = 108;
-static BINARY_EXT: u8 = 109;
-static SMALL_BIG_EXT: u8 = 110;
-static LARGE_BIG_EXT: u8 = 111;
-static ATOM_UTF8_EXT: u8 = 118;
-static SMALL_ATOM_UTF8_EXT: u8 = 119;
-static NEW_FLOAT_EXT: u8 = 70;
+const BERT_MAGIC_NUMBER: u8 = 131;
+const SMALL_INTEGER_EXT: u8 = 97;
+const INTEGER_EXT: u8 = 98;
+const FLOAT_EXT: u8 = 99;
+const ATOM_EXT: u8 = 100;
+const SMALL_ATOM_EXT: u8 = 115;
+const SMALL_TUPLE_EXT: u8 = 104;
+const LARGE_TUPLE_EXT: u8 = 105;
+const NIL_EXT: u8 = 106;
+const STRING_EXT: u8 = 107;
+const LIST_EXT: u8 = 108;
+const BINARY_EXT: u8 = 109;
+const SMALL_BIG_EXT: u8 = 110;
+const LARGE_BIG_EXT: u8 = 111;
+const ATOM_UTF8_EXT: u8 = 118;
+const SMALL_ATOM_UTF8_EXT: u8 = 119;
+const NEW_FLOAT_EXT: u8 = 70;
 
 #[derive(Debug)]
 pub struct Parser {
