@@ -48,7 +48,7 @@ impl fmt::Display for BertTerm {
                     if b >= 0x20 && b <= 0x7e {
                         write!(f, "{}", b as char);
                     } else {
-                        write!(f, "\\x{:x}", b);
+                        write!(f, "\\x{:02x}", b);
                     }
                 }
                 write!(f, "\"")

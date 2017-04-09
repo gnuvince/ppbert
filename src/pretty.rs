@@ -32,8 +32,12 @@ pub fn print(term: &BertTerm, indent_level: usize) {
 
         String(ref bytes) => {
             print!("\"");
-            for b in bytes {
-                print!("{}", *b as char);
+            for &b in bytes {
+                if b >= 0x20 && b <= 0x7e {
+                    print!("{}", b as char);
+                } else {
+                    print!("\\x{:02x}", b);
+                }
             }
             print!("\"");
         }
