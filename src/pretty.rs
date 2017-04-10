@@ -72,10 +72,8 @@ fn print_collection(terms: &[BertTerm], level: usize, open: char, close: char) {
         if !is_single_line {
             println!();
             indent(level + 1);
-            print(t, level + 1);
-        } else {
-            print(t, level + 1);
         }
+        print(t, level + 1);
         is_first = false;
     }
 
