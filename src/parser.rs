@@ -1,7 +1,6 @@
 use std::mem;
 
-use num::bigint;
-use num::bigint::ToBigInt;
+use num::bigint::{self, ToBigInt};
 use num::traits::{Zero, One};
 
 use encoding::{Encoding, DecoderTrap};
@@ -62,49 +61,48 @@ impl Parser {
 
     fn bert_term(&mut self) -> Result<BertTerm> {
         let offset = self.pos;
-        let tag = self.eat_u8()?;
-        if tag == SMALL_INTEGER_EXT {
-            self.small_integer()
-        } else if tag == INTEGER_EXT {
-            self.integer()
-        } else if tag == FLOAT_EXT {
-            self.old_float()
-        } else if tag == NEW_FLOAT_EXT {
-            self.new_float()
-        } else if tag == ATOM_EXT {
-            let len = self.eat_u16_be()? as usize;
-            self.atom(len)
-        } else if tag == SMALL_ATOM_EXT {
-            let len = self.eat_u8()? as usize;
-            self.atom(len)
-        } else if tag == ATOM_UTF8_EXT {
-            let len = self.eat_u16_be()? as usize;
-            self.atom_utf8(len)
-        } else if tag == SMALL_ATOM_UTF8_EXT {
-            let len = self.eat_u8()? as usize;
-            self.atom_utf8(len)
-        } else if tag == SMALL_TUPLE_EXT {
-            let len = self.eat_u8()? as usize;
-            self.tuple(len)
-        } else if tag == LARGE_TUPLE_EXT {
-            let len = self.eat_u32_be()? as usize;
-            self.tuple(len)
-        } else if tag == NIL_EXT {
-            Ok(BertTerm::List(vec![]))
-        } else if tag == LIST_EXT {
-            self.list()
-        } else if tag == STRING_EXT {
-            self.string()
-        } else if tag == BINARY_EXT {
-            self.binary()
-        } else if tag == SMALL_BIG_EXT {
-            let len = self.eat_u8()?;
-            self.bigint(len as usize)
-        } else if tag == LARGE_BIG_EXT {
-            let len = self.eat_u32_be()?;
-            self.bigint(len as usize)
-        } else {
-            Err(BertError::InvalidTag(offset, tag))
+        match self.eat_u8()? {
+            SMALL_INTEGER_EXT => { self.small_integer() }
+            INTEGER_EXT => { self.integer() }
+            FLOAT_EXT => { self.old_float() }
+            NEW_FLOAT_EXT => { self.new_float() }
+            ATOM_EXT => {
+                let len = self.eat_u16_be()? as usize;
+                self.atom(len)
+            }
+            SMALL_ATOM_EXT => {
+                let len = self.eat_u8()? as usize;
+                self.atom(len)
+            }
+            ATOM_UTF8_EXT => {
+                let len = self.eat_u16_be()? as usize;
+                self.atom_utf8(len)
+            }
+            SMALL_ATOM_UTF8_EXT => {
+                let len = self.eat_u8()? as usize;
+                self.atom_utf8(len)
+            }
+            SMALL_TUPLE_EXT => {
+                let len = self.eat_u8()? as usize;
+                self.tuple(len)
+            }
+            LARGE_TUPLE_EXT => {
+                let len = self.eat_u32_be()? as usize;
+                self.tuple(len)
+            }
+            NIL_EXT => { Ok(BertTerm::List(vec![])) }
+            LIST_EXT => { self.list() }
+            STRING_EXT => { self.string() }
+            BINARY_EXT => { self.binary() }
+            SMALL_BIG_EXT => {
+                let len = self.eat_u8()?;
+                self.bigint(len as usize)
+            }
+            LARGE_BIG_EXT => {
+                let len = self.eat_u32_be()?;
+                self.bigint(len as usize)
+            }
+            tag => { Err(BertError::InvalidTag(offset, tag)) }
         }
     }
 

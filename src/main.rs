@@ -1,7 +1,6 @@
 extern crate ppbert;
 
-use std::io;
-use std::io::{Read, Write};
+use std::io::{self, Read, Write};
 
 use ppbert::parser;
 use ppbert::pretty;
