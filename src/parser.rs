@@ -222,14 +222,10 @@ impl Parser {
     }
 
     fn peek(&self) -> Result<u8> {
-        self.peek_at(self.pos)
-    }
-
-    fn peek_at(&self, offset: usize) -> Result<u8> {
         if self.eof() {
-            return Err(BertError::EOF(offset));
+            return Err(BertError::EOF(self.pos));
         } else {
-            return Ok(self.contents[offset]);
+            return Ok(self.contents[self.pos]);
         }
     }
 
