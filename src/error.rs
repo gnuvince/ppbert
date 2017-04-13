@@ -41,8 +41,8 @@ pub type Result<T> = result::Result<T, BertError>;
 
 impl fmt::Display for BertError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let _ = write!(f, "{} at offset {}",
-                       self.description(), self.offset());
+        write!(f, "{} at offset {}",
+               self.description(), self.offset())?;
         match self.extra_info() {
             None => write!(f, ""),
             Some(ref s) => write!(f, ": {}", s)

@@ -3,7 +3,6 @@ extern crate ppbert;
 use std::io::{self, Read, Write};
 
 use ppbert::parser;
-use ppbert::pretty;
 
 fn main() {
     let mut stdin = io::stdin();
@@ -13,8 +12,7 @@ fn main() {
     let mut parser = parser::Parser::new(buf);
     match parser.parse() {
         Ok(ref term) => {
-            pretty::print(term, 0);
-            println!();
+            println!("{}", term);
         }
         Err(error) => {
             let _ = writeln!(&mut io::stderr(), "ppbert: {}", error);
