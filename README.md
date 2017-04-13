@@ -65,9 +65,9 @@ sys     0m13.628s
 
 $ time ppbert <large.bert >/dev/null
 
-real    0m19.670s
-user    0m19.092s
-sys     0m0.432s
+real    0m6.902s
+user    0m6.116s
+sys     0m0.452s
 ```
 
 ## Future work
