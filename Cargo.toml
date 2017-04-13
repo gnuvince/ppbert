@@ -9,3 +9,9 @@ authors = ["Vincent Foley <vfoley@gmail.com>"]
 [dependencies]
 num = "0.1"
 encoding = "0.2.33"
+clap = "2.23.2"
+
+[[bin]]
+name = "ppbert"
+path = "src/main.rs"
+bench = false

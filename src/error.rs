@@ -4,6 +4,10 @@ use std::error::Error;
 
 #[derive(Debug)]
 pub enum BertError {
+    // input errors
+    CannotOpenFile,
+
+    // parsing errors
     InvalidMagicNumber(usize),
     InvalidTag(usize, u8),
     InvalidFloat(usize),
@@ -14,7 +18,7 @@ pub enum BertError {
 }
 
 impl BertError {
-    fn offset(&self) -> usize {
+    fn offset(&self) -> Option<usize> {
         use self::BertError::*;
         match *self {
             InvalidMagicNumber(offset)
@@ -23,7 +27,9 @@ impl BertError {
             | InvalidUTF8Atom(offset)
             | InvalidLatin1Atom(offset)
             | ExtraData(offset)
-            | EOF(offset) => offset
+            | EOF(offset) => Some(offset),
+
+            _ => None
         }
     }
 
@@ -41,8 +47,12 @@ pub type Result<T> = result::Result<T, BertError>;
 
 impl fmt::Display for BertError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} at offset {}",
-               self.description(), self.offset())?;
+        match self.offset() {
+            Some(offset) =>
+                write!(f, "{} at offset {}", self.description(), offset)?,
+            None =>
+                write!(f, "{}", self.description())?
+        }
         match self.extra_info() {
             None => write!(f, ""),
             Some(ref s) => write!(f, ": {}", s)
@@ -55,6 +65,7 @@ impl Error for BertError {
     fn description(&self) -> &str {
         use self::BertError::*;
         match *self {
+            CannotOpenFile => "cannot open file",
             InvalidMagicNumber(_) => "invalid magic number",
             InvalidTag(_, _) => "invalid tag",
             InvalidFloat(_) => "invalid float",
