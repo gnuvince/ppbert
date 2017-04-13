@@ -2,7 +2,7 @@
 name = "ppbert"
 description = "Simple pretty printer for Erlang's External Term Format"
 homepage = "https://github.com/gnuvince/ppbert"
-version = "0.1.1"
+version = "0.1.2"
 license = "MIT"
 authors = ["Vincent Foley <vfoley@gmail.com>"]
 
