@@ -2,7 +2,7 @@
 
 A simple command-line utility to pretty print structures encoded using
 Erlang's [External Term Format](http://erlang.org/doc/apps/erts/erl_ext_dist.html).
-The input is read from *stdin* and written to *stdout*, making ppbert
+The input is read from *stdin* or a file and written to *stdout*, making ppbert
 a good candidate for shell pipelines.
 
 At the moment, ppbert supports only a subset of the field types of the
@@ -18,8 +18,23 @@ External Term Format:
 
 ## Usage
 
-```sh
-$ ppbert <mini_dict.bert
+```
+$ ppbert -h
+ppbert 0.1.3
+Vincent Foley
+Pretty print structure encoded in Erlang's External Term Format
+
+USAGE:
+    ppbert [<BERT FILE>]
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+ARGS:
+    <BERT FILE>...
+
+$ ppbert mini_dict.bert
 [
   {host, "localhost"},
   {port, 80},
@@ -63,7 +78,7 @@ real    1m10.968s
 user    0m49.644s
 sys     0m13.628s
 
-$ time ppbert <large.bert >/dev/null
+$ time ppbert large.bert >/dev/null
 
 real    0m6.902s
 user    0m6.116s
