@@ -61,7 +61,7 @@ fn write_string(f: &mut fmt::Formatter,
         if is_printable(b) {
             write!(f, "{}", b as char)?;
         } else {
-            write!(f, "\\x{:02}", b)?;
+            write!(f, "\\x{:02x}", b)?;
         }
     }
     write!(f, "{}", close)
