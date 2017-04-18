@@ -3,6 +3,7 @@ extern crate clap;
 
 use std::io::{self, Read, Write};
 use std::fs::File;
+use std::process::exit;
 
 use clap::{Arg, App};
 
@@ -25,13 +26,16 @@ fn main() {
         None => vec!["-"]
     };
 
+    let mut return_code = 0;
     for file in files {
         let _ = parse_and_print(file)
             .map(|ref t| println!("{}", t))
-            .map_err(|ref e|
-                     writeln!(&mut io::stderr(), "ppbert: {}: {}", file, e)
-            );
+            .map_err(|ref e| {
+                return_code = 1;
+                writeln!(&mut io::stderr(), "ppbert: {}: {}", file, e)
+            });
     }
+    exit(return_code);
 }
 
 
