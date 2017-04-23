@@ -9,7 +9,7 @@ use clap::{Arg, App};
 
 use ppbert::parser;
 use ppbert::bertterm::BertTerm;
-use ppbert::error::{BertError, Result};
+use ppbert::error::Result;
 
 fn main() {
     let matches = App::new("ppbert")
@@ -43,12 +43,10 @@ fn parse_and_print(file: &str) -> Result<BertTerm> {
     let mut buf: Vec<u8> = Vec::new();
     if file == "-" {
         let mut stdin = io::stdin();
-        let _ = stdin.read_to_end(&mut buf);
+        stdin.read_to_end(&mut buf)?;
     } else {
-        let mut f = File::open(file)
-            .map_err(|_| BertError::CannotOpenFile)?;
-        f.read_to_end(&mut buf)
-            .map_err(|_| BertError::CannotOpenFile)?;
+        let mut f = File::open(file)?;
+        f.read_to_end(&mut buf)?;
     }
     let mut parser = parser::Parser::new(buf);
     return parser.parse();
