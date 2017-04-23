@@ -1,11 +1,12 @@
 use std::fmt;
 use std::result;
 use std::error::Error;
+use std::io;
 
 #[derive(Debug)]
 pub enum BertError {
-    // input errors
-    CannotOpenFile,
+    // io errors
+    IoError(io::Error),
 
     // parsing errors
     InvalidMagicNumber(usize),
@@ -65,7 +66,7 @@ impl Error for BertError {
     fn description(&self) -> &str {
         use self::BertError::*;
         match *self {
-            CannotOpenFile => "cannot open file",
+            IoError(ref io_err) => io_err.description(),
             InvalidMagicNumber(_) => "invalid magic number",
             InvalidTag(_, _) => "invalid tag",
             InvalidFloat(_) => "invalid float",
@@ -74,5 +75,12 @@ impl Error for BertError {
             ExtraData(_) => "extra data after the BERT term",
             EOF(_) => "no more data is available",
         }
+    }
+}
+
+
+impl From<io::Error> for BertError {
+    fn from(io_err: io::Error) -> BertError {
+        BertError::IoError(io_err)
     }
 }
