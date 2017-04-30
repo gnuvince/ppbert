@@ -1,3 +1,11 @@
+# 0.2.1
+
+## Bug fixes
+
+- ppbert 0.2.0 showed its version number as "0.1.3"; now it prints the
+  version defined in Cargo.toml
+
+
 # 0.2.0
 
 ## New features

@@ -1,5 +1,5 @@
 extern crate ppbert;
-extern crate clap;
+#[macro_use] extern crate clap;
 
 use std::io::{self, Read, Write};
 use std::fs::File;
@@ -13,7 +13,7 @@ use ppbert::error::Result;
 
 fn main() {
     let matches = App::new("ppbert")
-        .version("0.1.3")
+        .version(crate_version!())
         .author("Vincent Foley")
         .about("Pretty print structure encoded in Erlang's External Term Format")
         .arg(Arg::with_name("input_files")
