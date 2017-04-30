@@ -7,6 +7,7 @@ const MAX_TERMS_PER_LINE: usize = 4;
 
 #[derive(Debug, PartialEq)]
 pub enum BertTerm {
+    Nil,
     Int(i32),
     BigInt(bigint::BigInt),
     Float(f64),
@@ -26,7 +27,8 @@ impl BertTerm {
             | BertTerm::Float(_)
             | BertTerm::Atom(_)
             | BertTerm::String(_)
-            | BertTerm::Binary(_) => true,
+            | BertTerm::Binary(_)
+            | BertTerm::Nil => true,
             BertTerm::List(_)
             | BertTerm::Tuple(_)
             | BertTerm::Map(_, _) => false
@@ -43,6 +45,7 @@ impl fmt::Display for BertTerm {
 /// Pretty print a bert term at a given indent level
 fn write_term(term: &BertTerm, f: &mut fmt::Formatter, indent: usize) -> fmt::Result {
     match *term {
+        BertTerm::Nil => write!(f, "[]"),
         BertTerm::Int(n) => write!(f, "{}", n),
         BertTerm::BigInt(ref n) => write!(f, "{}", n),
         BertTerm::Float(x) => write!(f, "{}", x),

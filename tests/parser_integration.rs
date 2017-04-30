@@ -196,7 +196,7 @@ fn binary() {
 #[test]
 fn nil() {
     assert!(match p(b"\x83\x6a") {
-        Ok(BertTerm::List(ref v)) => v.is_empty(),
+        Ok(BertTerm::Nil) => true,
         _ => false
     });
 }

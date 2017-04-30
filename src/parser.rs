@@ -91,7 +91,7 @@ impl Parser {
                 let len = self.eat_u32_be()? as usize;
                 self.tuple(len)
             }
-            NIL_EXT => { Ok(BertTerm::List(vec![])) }
+            NIL_EXT => { Ok(BertTerm::Nil) }
             LIST_EXT => { self.list() }
             STRING_EXT => { self.string() }
             BINARY_EXT => { self.binary() }
@@ -198,7 +198,7 @@ impl Parser {
         }
         let tail = self.bert_term()?;
         match tail {
-            BertTerm::List(_) => (),
+            BertTerm::Nil => (),
             last_term => { terms.push(last_term); }
         };
         Ok(BertTerm::List(terms))
