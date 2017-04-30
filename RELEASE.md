@@ -1,8 +1,9 @@
-# 0.1.4
+# 0.2.0
 
 ## New features
 
 - maps are now supported
+- nil (empty list) now has its own BertTerm item
 - ppbert returns 0 when all files have successfully parsed, 1 if at
   least one parsed incorrectly
 - ppbert now has a man page
