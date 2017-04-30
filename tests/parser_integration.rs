@@ -337,3 +337,26 @@ fn bigint() {
         e => { println!("{:?}", e); false }
     });
 }
+
+
+#[test]
+fn map() {
+    let binary = &[
+        131,
+        116,
+        0, 0, 0, 2, // two keys and values
+        97, 0,      // keys[0] == 0
+        100, 0, 4, b'z', b'e', b'r', b'o',
+        97, 42,     // keys[1] == 42
+        100, 0, 4, b'h', b'g', b't', b'g'
+    ];
+    assert!(match p(binary) {
+        Ok(BertTerm::Map(ref keys, ref vals)) => {
+            keys[0] == BertTerm::Int(0) &&
+                keys[1] == BertTerm::Int(42) &&
+                vals[0] == BertTerm::Atom("zero".to_string()) &&
+                vals[1] == BertTerm::Atom("hgtg".to_string())
+        }
+        _ => false
+    });
+}

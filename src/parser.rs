@@ -26,6 +26,7 @@ const LARGE_BIG_EXT: u8 = 111;
 const ATOM_UTF8_EXT: u8 = 118;
 const SMALL_ATOM_UTF8_EXT: u8 = 119;
 const NEW_FLOAT_EXT: u8 = 70;
+const MAP_EXT: u8 = 116;
 
 #[derive(Debug)]
 pub struct Parser {
@@ -101,6 +102,9 @@ impl Parser {
             LARGE_BIG_EXT => {
                 let len = self.eat_u32_be()?;
                 self.bigint(len as usize)
+            }
+            MAP_EXT => {
+                self.map()
             }
             tag => { Err(BertError::InvalidTag(offset, tag)) }
         }
@@ -214,6 +218,18 @@ impl Parser {
             sum = -sum;
         }
         Ok(BertTerm::BigInt(sum))
+    }
+
+    // TODO(vfoley): ensure no duplicate keys
+    fn map(&mut self) -> Result<BertTerm> {
+        let len = self.eat_u32_be()? as usize;
+        let mut keys = Vec::with_capacity(len);
+        let mut vals = Vec::with_capacity(len);
+        for _ in 0 .. len {
+            keys.push(self.bert_term()?);
+            vals.push(self.bert_term()?);
+        }
+        Ok(BertTerm::Map(keys, vals))
     }
 
     // Low-level parsing methods
