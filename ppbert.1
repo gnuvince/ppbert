@@ -30,6 +30,41 @@ Display version
 returns 0 if all files have been successfully processed,
 and 1 if any file failed to parse.
 
+.Sh COMPATIBILITY
+.Nm
+supports a subset of the types supported by the
+Erlang External Term Format, namely those that can
+represent data structures (see the list below).
+.Nm
+does not support types such as PIDs, ports,
+references, or functions.
+.Pp
+Supported types:
+.Bl -bullet -width Ds
+.It
+Small integers (tag: 97);
+.It
+Integers (tag: 98);
+.It
+Floating-point numbers (tags: 70, 99);
+.It
+Big integers (tags: 110, 111);
+.It
+Latin-1 atoms (tags: 100, 115);
+.It
+UTF-8 atoms (tags: 118, 119);
+.It
+Strings (tag: 107);
+.It
+Binaries (tag: 109);
+.It
+Tuples (tags: 104, 105);
+.It
+Lists (tags: 106, 108);
+.It
+Maps (tag: 116).
+.El
+
 .Sh EXAMPLES
 Pretty print the file foo.bert.
 .Pp
