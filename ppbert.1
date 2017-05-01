@@ -19,9 +19,18 @@ piped through stdin.
 .Nm
 accepts the following options:
 .Bl -tag -width Ds
-.It Fl h, -help
+.It Fl i Ar num , Fl -indent-width Ar num
+Set the indentation to
+.Ar num
+spaces. Default = 2.
+.It Fl m Ar num , Fl -max-terms-per-line Ar num
+Set the maximum number of basic terms
+(i.e., numbers, strings, atoms)
+that may be printed on a single line.
+Default = 4.
+.It Fl h , -help
 Display help
-.It Fl V, -version
+.It Fl V , -version
 Display version
 .El
 
