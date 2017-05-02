@@ -1,3 +1,14 @@
+# 0.2.2
+
+## New features
+
+- add command-line option (-i) to control the indentation width
+- add command-line option (-m) to control the maximum number of
+  basic terms on a single line
+- update manpage to reflect new command line options
+- update manpage to describe the supported term types
+
+
 # 0.2.1
 
 ## Bug fixes
