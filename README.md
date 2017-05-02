@@ -8,31 +8,43 @@ a good candidate for shell pipelines.
 At the moment, ppbert supports only a subset of the field types of the
 External Term Format:
 
-- integers;
-- big integers;
-- floats;
-- atoms (latin-1 and UTF-8);
-- binaries;
-- tuples;
-- lists.
+Supported types:
+
+- Small integers (tag: 97);
+- Integers (tag: 98);
+- Floating-point numbers (tags: 70, 99);
+- Big integers (tags: 110, 111);
+- Latin-1 atoms (tags: 100, 115);
+- UTF-8 atoms (tags: 118, 119);
+- Strings (tag: 107);
+- Binaries (tag: 109);
+- Tuples (tags: 104, 105);
+- Lists (tags: 106, 108);
+- Maps (tag: 116).
+
 
 ## Usage
 
 ```
 $ ppbert -h
-ppbert 0.1.3
+ppbert 0.2.2
 Vincent Foley
 Pretty print structure encoded in Erlang's External Term Format
 
 USAGE:
-    ppbert [<BERT FILE>]
+    ppbert [OPTIONS] [<FILES>]
 
 FLAGS:
     -h, --help       Prints help information
     -V, --version    Prints version information
 
+OPTIONS:
+    -i, --indent-width <num>
+    -m, --max-terms-per-line <num>
+
 ARGS:
-    <BERT FILE>...
+    <FILES>...
+
 
 $ ppbert mini_dict.bert
 [
@@ -87,7 +99,6 @@ sys     0m0.452s
 
 ## Future work
 
-- Add flags to control the pretty printing (e.g., indentation width,
-  number of basic values on a single line, etc.).
+- ~~Add flags to control the pretty printing (e.g., indentation width, number of basic values on a single line, etc.).~~
 - Add a [jq](https://stedolan.github.io/jq/)-like query language.
-- Write a man page.
+- ~~Write a man page.~~
