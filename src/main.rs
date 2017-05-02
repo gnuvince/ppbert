@@ -8,8 +8,14 @@ use std::process::exit;
 use clap::{Arg, App};
 
 use ppbert::parser;
-use ppbert::bertterm::BertTerm;
+use ppbert::bertterm::{
+    BertTerm,
+    PrettyPrinter,
+    DEFAULT_INDENT_WIDTH,
+    DEFAULT_MAX_TERMS_PER_LINE
+};
 use ppbert::error::Result;
+
 
 fn main() {
     let matches = App::new("ppbert")
@@ -17,8 +23,18 @@ fn main() {
         .author("Vincent Foley")
         .about("Pretty print structure encoded in Erlang's External Term Format")
         .arg(Arg::with_name("input_files")
-             .value_name("BERT FILE")
+             .value_name("FILES")
              .multiple(true))
+        .arg(Arg::with_name("indent_width")
+             .value_name("num")
+             .short("i")
+             .long("--indent-width")
+             .takes_value(true))
+        .arg(Arg::with_name("max_per_line")
+             .value_name("num")
+             .short("m")
+             .long("--max-terms-per-line")
+             .takes_value(true))
         .get_matches();
 
     let files: Vec<&str> = match matches.values_of("input_files") {
@@ -26,10 +42,18 @@ fn main() {
         None => vec!["-"]
     };
 
+    let indent_level = value_t!(matches, "indent_width", usize)
+        .unwrap_or(DEFAULT_INDENT_WIDTH);
+    let max_per_line = value_t!(matches, "max_per_line", usize)
+        .unwrap_or(DEFAULT_MAX_TERMS_PER_LINE);
+
     let mut return_code = 0;
     for file in files {
         let _ = parse_and_print(file)
-            .map(|ref t| println!("{}", t))
+            .map(|ref t| {
+                let pp = PrettyPrinter::new(t, indent_level, max_per_line);
+                println!("{}", pp)
+            })
             .map_err(|ref e| {
                 return_code = 1;
                 writeln!(&mut io::stderr(), "ppbert: {}: {}", file, e)
