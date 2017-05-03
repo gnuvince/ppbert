@@ -1,7 +1,6 @@
 .Dd 17 April 2017
 .Dt PPBERT 1
 .Os
-
 .Sh NAME
 .Nm ppbert
 .Nd pretty print structures encoded in Erlang's External Term Format
@@ -9,7 +8,6 @@
 .Nm
 .Op Ar OPTIONS
 .Op Ar FILES Nm ...
-
 .Sh DESCRIPTION
 .Nm
 parses and pretty prints a ETF-encoded file.
@@ -33,12 +31,10 @@ Display help
 .It Fl V , -version
 Display version
 .El
-
 .Sh RETURN VALUES
 .Nm
 returns 0 if all files have been successfully processed,
 and 1 if any file failed to parse.
-
 .Sh COMPATIBILITY
 .Nm
 supports a subset of the types supported by the
@@ -73,14 +69,13 @@ Lists (tags: 106, 108);
 .It
 Maps (tag: 116).
 .El
-
 .Sh EXAMPLES
 Pretty print the file foo.bert.
-.Pp
-.Dl
+.Bd -literal -offset indent
 $ ppbert foo.bert
+.Ed
 .Pp
 Pretty print from stdin
-.Dl
-.Pp
-$ printf \(dq\ex83\ex77\ex04atom\(dq | ppbert
+.Bd -literal -offset indent
+$ printf "\ex83\ex77\ex04atom" | ppbert
+.Ed
