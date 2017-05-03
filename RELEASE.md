@@ -1,3 +1,8 @@
+# 0.2.3
+
+- Improve performance of pretty printer
+
+
 # 0.2.2
 
 ## New features
