@@ -15,3 +15,8 @@ clap = "2.23.2"
 name = "ppbert"
 path = "src/main.rs"
 bench = false
+
+[profile.release]
+debug = true
+lto = true
+panic = "abort"
