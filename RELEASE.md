@@ -1,3 +1,11 @@
+# 0.2.4
+
+## New features
+
+- add command-line flag (-v) to show how long each phase
+  (parsing and pretty printing) takes.
+
+
 # 0.2.3
 
 - Improve performance of pretty printer

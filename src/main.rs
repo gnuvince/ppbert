@@ -4,6 +4,7 @@ extern crate ppbert;
 use std::io::{self, Read, Write};
 use std::fs::File;
 use std::process::exit;
+use std::time::Instant;
 
 use clap::{Arg, App};
 
@@ -35,6 +36,9 @@ fn main() {
              .short("m")
              .long("--max-terms-per-line")
              .takes_value(true))
+        .arg(Arg::with_name("verbose")
+             .short("v")
+             .long("--verbose"))
         .get_matches();
 
     let files: Vec<&str> = match matches.values_of("input_files") {
@@ -46,13 +50,30 @@ fn main() {
         .unwrap_or(DEFAULT_INDENT_WIDTH);
     let max_per_line = value_t!(matches, "max_per_line", usize)
         .unwrap_or(DEFAULT_MAX_TERMS_PER_LINE);
+    let verbose = matches.is_present("verbose");
 
     let mut return_code = 0;
     for file in files {
-        let _ = parse_and_print(file)
+        let now = Instant::now();
+        let parse_res = parse_file(file);
+        if verbose {
+            let dur = now.elapsed();
+            let _ = writeln!(&mut io::stderr(),
+                             "ppbert: parse time: {}.{}s",
+                             dur.as_secs(), dur.subsec_nanos());
+        }
+        let _ = parse_res
             .map(|ref t| {
+                let now = Instant::now();
                 let pp = PrettyPrinter::new(t, indent_level, max_per_line);
-                println!("{}", pp)
+                println!("{}", pp);
+                if verbose {
+                    let dur = now.elapsed();
+                    let _ = writeln!(&mut io::stderr(),
+                                     "ppbert: pretty print time: {}.{}s",
+                                     dur.as_secs(), dur.subsec_nanos());
+                }
+
             })
             .map_err(|ref e| {
                 return_code = 1;
@@ -63,7 +84,7 @@ fn main() {
 }
 
 
-fn parse_and_print(file: &str) -> Result<BertTerm> {
+fn parse_file(file: &str) -> Result<BertTerm> {
     let mut buf: Vec<u8> = Vec::new();
     if file == "-" {
         let mut stdin = io::stdin();
