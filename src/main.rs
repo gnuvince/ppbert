@@ -39,6 +39,9 @@ fn main() {
         .arg(Arg::with_name("verbose")
              .short("v")
              .long("--verbose"))
+        .arg(Arg::with_name("skip_pretty_print")
+             .short("s")
+             .long("--skip-pretty-print"))
         .get_matches();
 
     let files: Vec<&str> = match matches.values_of("input_files") {
@@ -51,6 +54,7 @@ fn main() {
     let max_per_line = value_t!(matches, "max_per_line", usize)
         .unwrap_or(DEFAULT_MAX_TERMS_PER_LINE);
     let verbose = matches.is_present("verbose");
+    let skip_pretty_print = matches.is_present("skip_pretty_print");
 
     let mut return_code = 0;
     for file in files {
@@ -62,6 +66,11 @@ fn main() {
                              "ppbert: parse time: {}.{}s",
                              dur.as_secs(), dur.subsec_nanos());
         }
+
+        if skip_pretty_print {
+            continue;
+        }
+
         let _ = parse_res
             .map(|ref t| {
                 let now = Instant::now();
