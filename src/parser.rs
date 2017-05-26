@@ -144,26 +144,26 @@ impl Parser {
 
     fn atom(&mut self, len: usize) -> Result<BertTerm> {
         let offset = self.pos;
-        let mut buf: Vec<u8> = vec![0; len];
+        let mut bytes: Vec<u8> = Vec::with_capacity(len);
         let mut is_ascii = true;
-        for p in buf.iter_mut() {
+        for _ in 0 .. len {
             let b = self.eat_u8()?;
             is_ascii = is_ascii && (b < 128);
-            *p = b;
+            bytes.push(b);
         }
 
         // Optimization: ASCII atoms represent the overwhelming
         // majority of use cases of atoms. When we read the bytes
         // of the atom, we record whether they are all ASCII
-        // (i.e., less than 128); if it's the case, we don't
+        // (i.e., small than 128); if it's the case, we don't
         // need to bother with latin-1 decoding. We use an unsafe
         // method because ASCII strings are guaranteed to be valid
         // UTF-8 strings.
         if is_ascii {
-            let s = unsafe { String::from_utf8_unchecked(buf) };
+            let s = unsafe { String::from_utf8_unchecked(bytes) };
             Ok(BertTerm::Atom(s))
         } else {
-            ISO_8859_1.decode(&buf, DecoderTrap::Strict)
+            ISO_8859_1.decode(&bytes, DecoderTrap::Strict)
                 .map(|s| BertTerm::Atom(s))
                 .map_err(|_| BertError::InvalidLatin1Atom(offset))
         }
@@ -171,22 +171,13 @@ impl Parser {
 
     fn atom_utf8(&mut self, len: usize) -> Result<BertTerm> {
         let offset = self.pos;
-        let mut buf: Vec<u8> = vec![0; len];
-        let mut is_ascii = true;
-        for p in buf.iter_mut() {
-            let b = self.eat_u8()?;
-            is_ascii = is_ascii && (b < 128);
-            *p = b;
+        let mut buf = Vec::with_capacity(len);
+        for _ in 0 .. len {
+            buf.push(self.eat_u8()?);
         }
-
-        if is_ascii {
-            let s = unsafe { String::from_utf8_unchecked(buf) };
-            Ok(BertTerm::Atom(s))
-        } else {
-            String::from_utf8(buf)
-                .map(|s| BertTerm::Atom(s))
-                .map_err(|_| BertError::InvalidUTF8Atom(offset))
-        }
+        String::from_utf8(buf)
+            .map(|s| BertTerm::Atom(s))
+            .map_err(|_| BertError::InvalidUTF8Atom(offset))
     }
 
     fn tuple(&mut self, len: usize) -> Result<BertTerm> {
@@ -199,22 +190,20 @@ impl Parser {
 
     fn string(&mut self) -> Result<BertTerm> {
         let len = self.eat_u16_be()?;
-        let bytes = self.string_content(len as usize)?;
+        let mut bytes = Vec::with_capacity(len as usize);
+        for _ in 0 .. len {
+            bytes.push(self.eat_u8()?);
+        }
         Ok(BertTerm::String(bytes))
     }
 
     fn binary(&mut self) -> Result<BertTerm> {
         let len = self.eat_u32_be()?;
-        let bytes = self.string_content(len as usize)?;
-        Ok(BertTerm::Binary(bytes))
-    }
-
-    fn string_content(&mut self, len: usize) -> Result<Vec<u8>> {
-        let mut bytes: Vec<u8> = vec![0; len];
-        for p in bytes.iter_mut() {
-            *p = self.eat_u8()?;
+        let mut bytes = Vec::with_capacity(len as usize);
+        for _ in 0 .. len {
+            bytes.push(self.eat_u8()?);
         }
-        return Ok(bytes);
+        Ok(BertTerm::Binary(bytes))
     }
 
     fn list(&mut self) -> Result<BertTerm> {
