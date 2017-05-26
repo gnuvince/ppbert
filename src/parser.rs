@@ -144,24 +144,49 @@ impl Parser {
 
     fn atom(&mut self, len: usize) -> Result<BertTerm> {
         let offset = self.pos;
-        let mut bytes: Vec<u8> = Vec::with_capacity(len);
+        let mut buf: Vec<u8> = Vec::with_capacity(len);
+        let mut is_ascii = true;
         for _ in 0 .. len {
-            bytes.push(self.eat_u8()?);
+            let b = self.eat_u8()?;
+            is_ascii = is_ascii && (b < 128);
+            buf.push(b);
         }
-        ISO_8859_1.decode(&bytes, DecoderTrap::Strict)
-            .map(|s| BertTerm::Atom(s))
-            .map_err(|_| BertError::InvalidLatin1Atom(offset))
+
+        // Optimization: ASCII atoms represent the overwhelming
+        // majority of use cases of atoms. When we read the bytes
+        // of the atom, we record whether they are all ASCII
+        // (i.e., less than 128); if it's the case, we don't
+        // need to bother with latin-1 decoding. We use an unsafe
+        // method because ASCII strings are guaranteed to be valid
+        // UTF-8 strings.
+        if is_ascii {
+            let s = unsafe { String::from_utf8_unchecked(buf) };
+            Ok(BertTerm::Atom(s))
+        } else {
+            ISO_8859_1.decode(&buf, DecoderTrap::Strict)
+                .map(|s| BertTerm::Atom(s))
+                .map_err(|_| BertError::InvalidLatin1Atom(offset))
+        }
     }
 
     fn atom_utf8(&mut self, len: usize) -> Result<BertTerm> {
         let offset = self.pos;
         let mut buf = Vec::with_capacity(len);
+        let mut is_ascii = true;
         for _ in 0 .. len {
-            buf.push(self.eat_u8()?);
+            let b = self.eat_u8()?;
+            is_ascii = is_ascii && (b < 128);
+            buf.push(b);
         }
-        String::from_utf8(buf)
-            .map(|s| BertTerm::Atom(s))
-            .map_err(|_| BertError::InvalidUTF8Atom(offset))
+
+        if is_ascii {
+            let s = unsafe { String::from_utf8_unchecked(buf) };
+            Ok(BertTerm::Atom(s))
+        } else {
+            String::from_utf8(buf)
+                .map(|s| BertTerm::Atom(s))
+                .map_err(|_| BertError::InvalidUTF8Atom(offset))
+        }
     }
 
     fn tuple(&mut self, len: usize) -> Result<BertTerm> {
