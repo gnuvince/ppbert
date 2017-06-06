@@ -8,7 +8,7 @@
 
 ## Improvements
 
-- small performance imprvements of the parsing methods for atoms,
+- improve performance of the parsing methods for atoms,
   strings, and binaries by avoiding bounds checking.
 
 
