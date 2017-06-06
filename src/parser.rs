@@ -144,12 +144,12 @@ impl Parser {
 
     fn atom(&mut self, len: usize) -> Result<BertTerm> {
         let offset = self.pos;
-        let mut buf: Vec<u8> = Vec::with_capacity(len);
+        let mut buf: Vec<u8> = vec![0; len];
         let mut is_ascii = true;
-        for _ in 0 .. len {
+        for p in buf.iter_mut() {
             let b = self.eat_u8()?;
             is_ascii = is_ascii && (b < 128);
-            buf.push(b);
+            *p = b;
         }
 
         // Optimization: ASCII atoms represent the overwhelming
@@ -171,12 +171,12 @@ impl Parser {
 
     fn atom_utf8(&mut self, len: usize) -> Result<BertTerm> {
         let offset = self.pos;
-        let mut buf = Vec::with_capacity(len);
+        let mut buf: Vec<u8> = vec![0; len];
         let mut is_ascii = true;
-        for _ in 0 .. len {
+        for p in buf.iter_mut() {
             let b = self.eat_u8()?;
             is_ascii = is_ascii && (b < 128);
-            buf.push(b);
+            *p = b;
         }
 
         if is_ascii {
