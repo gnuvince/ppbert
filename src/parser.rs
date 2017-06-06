@@ -199,20 +199,22 @@ impl Parser {
 
     fn string(&mut self) -> Result<BertTerm> {
         let len = self.eat_u16_be()?;
-        let mut bytes = Vec::with_capacity(len as usize);
-        for _ in 0 .. len {
-            bytes.push(self.eat_u8()?);
-        }
+        let bytes = self.string_content(len as usize)?;
         Ok(BertTerm::String(bytes))
     }
 
     fn binary(&mut self) -> Result<BertTerm> {
         let len = self.eat_u32_be()?;
-        let mut bytes = Vec::with_capacity(len as usize);
-        for _ in 0 .. len {
-            bytes.push(self.eat_u8()?);
-        }
+        let bytes = self.string_content(len as usize)?;
         Ok(BertTerm::Binary(bytes))
+    }
+
+    fn string_content(&mut self, len: usize) -> Result<Vec<u8>> {
+        let mut bytes: Vec<u8> = vec![0; len];
+        for p in bytes.iter_mut() {
+            *p = self.eat_u8()?;
+        }
+        return Ok(bytes);
     }
 
     fn list(&mut self) -> Result<BertTerm> {

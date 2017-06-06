@@ -183,12 +183,37 @@ fn string() {
         Ok(BertTerm::String(ref s)) => s == b"foobar",
         _ => false
     });
+
+    // too many characters
+    assert!(match p(b"\x83\x6b\x00\x02foo") {
+        Err(BertError::ExtraData(_)) => true,
+        _ => false
+    });
+
+
+    // not enough characters
+    assert!(match p(b"\x83\x6b\x00\x04foo") {
+        Err(BertError::EOF(_)) => true,
+        _ => false
+    });
 }
 
 #[test]
 fn binary() {
     assert!(match p(b"\x83\x6d\x00\x00\x00\x06foobar") {
         Ok(BertTerm::Binary(ref s)) => s == b"foobar",
+        _ => false
+    });
+
+    // too many characters
+    assert!(match p(b"\x83\x6d\x00\x00\x00\x02foo") {
+        Err(BertError::ExtraData(_)) => true,
+        _ => false
+    });
+
+    // not enough characters
+    assert!(match p(b"\x83\x6d\x00\x00\x00\x04foo") {
+        Err(BertError::EOF(_)) => true,
         _ => false
     });
 }
