@@ -4,6 +4,12 @@
 
 - add command-line flag (-v) to show how long each phase
   (parsing and pretty printing) takes.
+- add command-line flag (-s) to stop after parsing.
+
+## Improvements
+
+- small performance imprvements of the parsing methods for atoms,
+  strings, and binaries by avoiding bounds checking.
 
 
 # 0.2.3
