@@ -115,6 +115,10 @@ fn handle_file<T>(
     let parse_output = parse_fn(buf)?;
     let dur1 = now.elapsed();
 
+    if verbose {
+        let _ = writeln!(&mut io::stderr(), "ppbert: parse time: {}.{:09}s", dur1.as_secs(), dur1.subsec_nanos());
+    }
+
     // Early exit if parse-only
     if parse_only {
         return Ok(());
@@ -126,7 +130,6 @@ fn handle_file<T>(
     let dur2 = now.elapsed();
 
     if verbose {
-        let _ = writeln!(&mut io::stderr(), "ppbert: parse time: {}.{:09}s", dur1.as_secs(), dur1.subsec_nanos());
         let _ = writeln!(&mut io::stderr(), "ppbert: print time: {}.{:09}s", dur2.as_secs(), dur2.subsec_nanos());
     }
 

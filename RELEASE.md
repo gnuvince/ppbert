@@ -1,3 +1,11 @@
+# 0.2.6
+
+## Bug fixes
+
+- fix bug where `--verbose` would not print the parse time if
+  `--skip-pretty-print` was set.
+
+
 # 0.2.5
 
 ## New features
