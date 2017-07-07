@@ -15,6 +15,7 @@ pub enum BertError {
     InvalidUTF8Atom(usize),
     InvalidLatin1Atom(usize),
     ExtraData(usize),
+    VarintTooLarge(usize),
     EOF(usize)
 }
 
@@ -28,6 +29,7 @@ impl BertError {
             | InvalidUTF8Atom(offset)
             | InvalidLatin1Atom(offset)
             | ExtraData(offset)
+            | VarintTooLarge(offset)
             | EOF(offset) => Some(offset),
 
             _ => None
@@ -73,6 +75,7 @@ impl Error for BertError {
             InvalidUTF8Atom(_) => "UTF-8 atom is not correctly encoded",
             InvalidLatin1Atom(_) => "Latin-1 atom is not correctly encoded",
             ExtraData(_) => "extra data after the BERT term",
+            VarintTooLarge(_) => "varint is too large (greater than 2^64-1)",
             EOF(_) => "no more data is available",
         }
     }

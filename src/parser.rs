@@ -49,6 +49,21 @@ impl Parser {
         }
     }
 
+    pub fn parse_bert2(&mut self) -> Result<Vec<BertTerm>> {
+        let mut terms = Vec::with_capacity(32);
+        while !self.eof() {
+            let _ = self.parse_varint()?;
+            let _ = self.magic_number()?;
+            let t = self.bert_term()?;
+            terms.push(t);
+        }
+        if self.eof() {
+            return Ok(terms);
+        } else {
+            return Err(BertError::ExtraData(self.pos));
+        }
+    }
+
     // Parsers
     fn magic_number(&mut self) -> Result<()> {
         let offset = self.pos;
@@ -306,4 +321,57 @@ impl Parser {
         n += self.eat_u8()? as u64;
         return Ok(n);
     }
+
+
+    // https://developers.google.com/protocol-buffers/docs/encoding#varints
+    fn parse_varint(&mut self) -> Result<u64> {
+        let start_pos = self.pos;
+
+        let mut bytes = Vec::with_capacity(mem::size_of::<u64>());
+        let mut i = 0;
+
+        while !self.eof() && i < bytes.capacity() {
+            let b = self.eat_u8()?;
+            bytes.push(b);
+            if b & 0x80 == 0 {
+                break;
+            }
+            i += 1;
+        }
+
+        if i >= bytes.capacity() {
+            return Err(BertError::VarintTooLarge(start_pos));
+        }
+
+        let mut x: u64 = 0;
+        for (i, byte) in bytes.iter().rev().enumerate() {
+            x = (x << (7*i) as u64) | (*byte as u64 & 0x7f);
+        }
+
+        return Ok(x);
+    }
+}
+
+
+#[test]
+fn test_varint() {
+    assert_eq!(1, {
+        match Parser::new(vec![1]).parse_varint() {
+            Ok(x) => x,
+            Err(_) => u64::max_value()
+        }
+    });
+
+
+    assert_eq!(300, {
+        match Parser::new(vec![0b1010_1100, 0b0000_0010]).parse_varint() {
+            Ok(x) => x,
+            Err(_) => u64::max_value()
+        }
+    });
+
+    assert!(Parser::new(vec![0xff, 0xff, 0xff, 0xff,
+                             0xff, 0xff, 0xff, 0x7f]).parse_varint().is_ok());
+    assert!(Parser::new(vec![0xff, 0xff, 0xff, 0xff,
+                             0xff, 0xff, 0xff, 0x80]).parse_varint().is_err());
 }

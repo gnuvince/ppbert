@@ -8,15 +8,14 @@ use std::time::Instant;
 
 use clap::{Arg, App};
 
-use ppbert::parser;
 use ppbert::bertterm::{
+    self,
     BertTerm,
-    PrettyPrinter,
     DEFAULT_INDENT_WIDTH,
     DEFAULT_MAX_TERMS_PER_LINE
 };
 use ppbert::error::Result;
-
+use ppbert::parser;
 
 fn main() {
     let matches = App::new("ppbert")
@@ -46,6 +45,10 @@ fn main() {
              .help("Only parse the file(s)")
              .short("s")
              .long("--skip-pretty-print"))
+        .arg(Arg::with_name("bert2")
+             .help("Parse .bert2 files")
+             .short("2")
+             .long("bert2"))
         .get_matches();
 
     let files: Vec<&str> = match matches.values_of("input_files") {
@@ -59,45 +62,45 @@ fn main() {
         .unwrap_or(DEFAULT_MAX_TERMS_PER_LINE);
     let verbose = matches.is_present("verbose");
     let skip_pretty_print = matches.is_present("skip_pretty_print");
+    let bert2 = matches.is_present("bert2");
 
     let mut return_code = 0;
     for file in files {
-        let now = Instant::now();
-        let parse_res = parse_file(file);
-        if verbose {
-            let dur = now.elapsed();
-            let _ = writeln!(&mut io::stderr(),
-                             "ppbert: parse time: {}.{}s",
-                             dur.as_secs(), dur.subsec_nanos());
-        }
-
-        if skip_pretty_print {
-            continue;
-        }
-
-        let _ = parse_res
-            .map(|ref t| {
-                let now = Instant::now();
-                let pp = PrettyPrinter::new(t, indent_level, max_per_line);
-                println!("{}", pp);
-                if verbose {
-                    let dur = now.elapsed();
-                    let _ = writeln!(&mut io::stderr(),
-                                     "ppbert: pretty print time: {}.{}s",
-                                     dur.as_secs(), dur.subsec_nanos());
-                }
-
-            })
-            .map_err(|ref e| {
+        let res =
+            if bert2 {
+                handle_file(file, skip_pretty_print, verbose,
+                            indent_level, max_per_line,
+                            parse_bert2,
+                            bertterm::pp_bert2)
+            } else {
+                handle_file(file, skip_pretty_print, verbose,
+                            indent_level, max_per_line,
+                            parse_bert1,
+                            bertterm::pp_bert1)
+            };
+        match res {
+            Ok(()) => (),
+            Err(e) => {
                 return_code = 1;
-                writeln!(&mut io::stderr(), "ppbert: {}: {}", file, e)
-            });
+                let _ = writeln!(&mut io::stderr(), "ppbert: {}: {}", file, e);
+            }
+        }
     }
     exit(return_code);
 }
 
 
-fn parse_file(file: &str) -> Result<BertTerm> {
+fn handle_file<T>(
+    file: &str,
+    parse_only: bool,
+    verbose: bool,
+    indent: usize,
+    terms_per_line: usize,
+    parse_fn: fn(Vec<u8>) -> Result<T>,
+    pp_fn: fn(T, usize, usize) -> ()
+) -> Result<()> {
+
+    // Read file or stdin into buffer
     let mut buf: Vec<u8> = Vec::new();
     if file == "-" {
         let mut stdin = io::stdin();
@@ -106,6 +109,37 @@ fn parse_file(file: &str) -> Result<BertTerm> {
         let mut f = File::open(file)?;
         f.read_to_end(&mut buf)?;
     }
+
+    // Parse input
+    let now = Instant::now();
+    let parse_output = parse_fn(buf)?;
+    let dur1 = now.elapsed();
+
+    // Early exit if parse-only
+    if parse_only {
+        return Ok(());
+    }
+
+    // Pretty print
+    let now = Instant::now();
+    pp_fn(parse_output, indent, terms_per_line);
+    let dur2 = now.elapsed();
+
+    if verbose {
+        let _ = writeln!(&mut io::stderr(), "ppbert: parse time: {}.{:09}s", dur1.as_secs(), dur1.subsec_nanos());
+        let _ = writeln!(&mut io::stderr(), "ppbert: print time: {}.{:09}s", dur2.as_secs(), dur2.subsec_nanos());
+    }
+
+    return Ok(());
+}
+
+
+fn parse_bert1(buf: Vec<u8>) -> Result<BertTerm> {
     let mut parser = parser::Parser::new(buf);
     return parser.parse();
+}
+
+fn parse_bert2(buf: Vec<u8>) -> Result<Vec<BertTerm>> {
+    let mut parser = parser::Parser::new(buf);
+    return parser.parse_bert2();
 }
