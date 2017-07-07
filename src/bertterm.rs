@@ -48,6 +48,22 @@ impl fmt::Display for BertTerm {
 }
 
 
+/// Outputs a BertTerm to stdout.  Used for original .bert files.
+pub fn pp_bert1(t: BertTerm, indent_width: usize, max_terms: usize) {
+    let pp = PrettyPrinter::new(&t, indent_width, max_terms);
+    println!("{}", pp);
+}
+
+
+/// Outputs a vector of BertTerms to stdout.  Used for rig's .bert2 files.
+pub fn pp_bert2(terms: Vec<BertTerm>, indent_width: usize, terms_per_line: usize) {
+    for t in terms {
+        let pp = PrettyPrinter::new(&t, indent_width, terms_per_line);
+        println!("{}", pp);
+    }
+}
+
+
 pub struct PrettyPrinter<'a> {
     term: &'a BertTerm,
     indent_width: usize,
@@ -59,6 +75,7 @@ impl <'a> fmt::Display for PrettyPrinter<'a> {
         self.write_term(self.term, f, 0)
     }
 }
+
 
 impl <'a> PrettyPrinter<'a> {
     /// Creates a pretty printer for `term` where sub-terms
