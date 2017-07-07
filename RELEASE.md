@@ -1,3 +1,15 @@
+# 0.2.5
+
+## New features
+
+- add support for .bert2 files.
+
+## Bug fixes
+
+- fix the times reported by the `--verbose` flags were wrong; the
+  leading zeros were missing.
+
+
 # 0.2.4
 
 ## New features
