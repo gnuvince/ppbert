@@ -1,3 +1,10 @@
+# 0.3.0
+
+## Interface changes
+
+- The `-s/--skip-pretty-print` has been renamed to `-p/--parse`.
+
+
 # 0.2.6
 
 ## Bug fixes

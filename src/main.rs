@@ -41,10 +41,10 @@ fn main() {
              .help("Enable verbose mode")
              .short("v")
              .long("--verbose"))
-        .arg(Arg::with_name("skip_pretty_print")
-             .help("Only parse the file(s)")
-             .short("s")
-             .long("--skip-pretty-print"))
+        .arg(Arg::with_name("parse")
+             .help("Parse the input, don't pretty print it")
+             .short("p")
+             .long("--parse"))
         .arg(Arg::with_name("bert2")
              .help("Parse .bert2 files")
              .short("2")
@@ -61,19 +61,19 @@ fn main() {
     let max_per_line = value_t!(matches, "max_per_line", usize)
         .unwrap_or(DEFAULT_MAX_TERMS_PER_LINE);
     let verbose = matches.is_present("verbose");
-    let skip_pretty_print = matches.is_present("skip_pretty_print");
+    let parse_only = matches.is_present("parse");
     let bert2 = matches.is_present("bert2");
 
     let mut return_code = 0;
     for file in files {
         let res =
             if bert2 {
-                handle_file(file, skip_pretty_print, verbose,
+                handle_file(file, parse_only, verbose,
                             indent_level, max_per_line,
                             parse_bert2,
                             bertterm::pp_bert2)
             } else {
-                handle_file(file, skip_pretty_print, verbose,
+                handle_file(file, parse_only, verbose,
                             indent_level, max_per_line,
                             parse_bert1,
                             bertterm::pp_bert1)
