@@ -48,20 +48,22 @@ impl fmt::Display for BertTerm {
 }
 
 
-/// Outputs a BertTerm to stdout.  Used for original .bert files.
-pub fn pp_bert1(t: BertTerm, indent_width: usize, max_terms: usize) {
-    let pp = PrettyPrinter::new(&t, indent_width, max_terms);
-    println!("{}", pp);
-}
-
-
-/// Outputs a vector of BertTerms to stdout.  Used for rig's .bert2 files.
-pub fn pp_bert2(terms: Vec<BertTerm>, indent_width: usize, terms_per_line: usize) {
+/// Outputs a vector of BertTerms to stdout.
+pub fn pp_bert(terms: Vec<BertTerm>, indent_width: usize, terms_per_line: usize) {
     for t in terms {
         let pp = PrettyPrinter::new(&t, indent_width, terms_per_line);
         println!("{}", pp);
     }
 }
+
+/// Outputs a BertTerm as JSON to stdout.
+pub fn pp_json(terms: Vec<BertTerm>, _indent_width: usize, _terms_per_line: usize) {
+    for t in terms {
+        let pp = JsonPrettyPrinter { term: &t };
+        println!("{}", pp);
+    }
+}
+
 
 
 pub struct PrettyPrinter<'a> {
@@ -200,7 +202,70 @@ impl <'a> PrettyPrinter<'a> {
 }
 
 
+pub struct JsonPrettyPrinter<'a> {
+    term: &'a BertTerm
+}
+
+
+impl <'a> fmt::Display for JsonPrettyPrinter<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.term.write_json(f)
+    }
+}
+
+impl BertTerm {
+    fn write_json(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use self::BertTerm::*;
+        match *self {
+            Nil => f.write_str("[]"),
+            Int(n) => write!(f, "{}", n),
+            BigInt(ref b) => write!(f, "\"{}\"", b),
+            Float(x) => write!(f, "{}", x),
+            Atom(ref s) => write!(f, "\"{}\"", s),
+            List(ref terms) | Tuple(ref terms) => {
+                f.write_char('[')?;
+                let mut first = true;
+                for term in terms {
+                    if !first { f.write_char(',')?; }
+                    first = false;
+                    term.write_json(f)?;
+                }
+                f.write_char(']')
+            }
+            Binary(ref bytes) | String(ref bytes) => {
+                f.write_char('"')?;
+                for b in bytes {
+                    if must_be_escaped(*b) {
+                        write!(f, "\\{}", *b as char)?;
+                    } else if is_printable(*b) {
+                        f.write_char(*b as char)?;
+                    } else {
+                        write!(f, "\\u{:04x}", *b)?;
+                    }
+                }
+                f.write_char('"')
+            }
+            Map(ref keys, ref values) => {
+                f.write_char('{')?;
+                let mut first = true;
+                for (key, value) in keys.iter().zip(values) {
+                    if !first { f.write_char(',')?; }
+                    first = false;
+                    key.write_json(f)?;
+                    f.write_char(':')?;
+                    value.write_json(f)?;
+                }
+                f.write_char('}')
+            }
+        }
+    }
+}
+
 
 fn is_printable(b: u8) -> bool {
     b >= 0x20 && b <= 0x7e
+}
+
+fn must_be_escaped(b: u8) -> bool {
+    b == b'"' || b == b'\\'
 }

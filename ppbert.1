@@ -1,4 +1,4 @@
-.Dd 17 April 2017
+.Dd 19 January 2018
 .Dt PPBERT 1
 .Os
 .Sh NAME
@@ -17,6 +17,11 @@ piped through stdin.
 .Nm
 accepts the following options:
 .Bl -tag -width Ds
+.It Fl 2 , Fl -bert2
+Parse a .bert2 file
+.It Fl j , Fl -json
+Output in JSON. No pretty printing is performed
+with this option; pipe into jq if necessary.
 .It Fl i Ar num , Fl -indent-width Ar num
 Set the indentation to
 .Ar num

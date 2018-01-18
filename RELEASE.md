@@ -1,5 +1,9 @@
 # 0.3.0
 
+## New features
+
+- The `-j/--json` flag can be used to output JSON rather than Erlang terms.
+
 ## Interface changes
 
 - The `-s/--skip-pretty-print` has been renamed to `-p/--parse`.

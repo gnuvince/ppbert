@@ -49,6 +49,10 @@ fn main() {
              .help("Parse .bert2 files")
              .short("2")
              .long("bert2"))
+        .arg(Arg::with_name("json")
+             .help("Output in JSON")
+             .short("j")
+             .long("json"))
         .get_matches();
 
     let files: Vec<&str> = match matches.values_of("input_files") {
@@ -62,22 +66,17 @@ fn main() {
         .unwrap_or(DEFAULT_MAX_TERMS_PER_LINE);
     let verbose = matches.is_present("verbose");
     let parse_only = matches.is_present("parse");
-    let bert2 = matches.is_present("bert2");
+
+    let parse_fn =
+        if matches.is_present("bert2") {parse_bert2} else {parse_bert1};
+    let output_fn =
+        if matches.is_present("json") {bertterm::pp_json} else {bertterm::pp_bert};
 
     let mut return_code = 0;
     for file in files {
-        let res =
-            if bert2 {
-                handle_file(file, parse_only, verbose,
-                            indent_level, max_per_line,
-                            parse_bert2,
-                            bertterm::pp_bert2)
-            } else {
-                handle_file(file, parse_only, verbose,
-                            indent_level, max_per_line,
-                            parse_bert1,
-                            bertterm::pp_bert1)
-            };
+        let res = handle_file(file, parse_only, verbose,
+                              indent_level, max_per_line,
+                              parse_fn, output_fn);
         match res {
             Ok(()) => (),
             Err(e) => {
@@ -137,9 +136,10 @@ fn handle_file<T>(
 }
 
 
-fn parse_bert1(buf: Vec<u8>) -> Result<BertTerm> {
+fn parse_bert1(buf: Vec<u8>) -> Result<Vec<BertTerm>> {
     let mut parser = parser::Parser::new(buf);
-    return parser.parse();
+    let term = parser.parse()?;
+    return Ok(vec![term]);
 }
 
 fn parse_bert2(buf: Vec<u8>) -> Result<Vec<BertTerm>> {
