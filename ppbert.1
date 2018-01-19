@@ -22,6 +22,11 @@ Parse a .bert2 file
 .It Fl j , Fl -json
 Output in JSON. No pretty printing is performed
 with this option; pipe into jq if necessary.
+.It Fl -transform-proplists
+Erlang proplists are converted to JSON objects;
+ignored if
+.Fl -json
+is not provided.
 .It Fl i Ar num , Fl -indent-width Ar num
 Set the indentation to
 .Ar num

@@ -53,6 +53,9 @@ fn main() {
              .help("Output in JSON")
              .short("j")
              .long("json"))
+        .arg(Arg::with_name("transform-proplists")
+             .help("Transform proplists into JSON objects (only valid with --json)")
+             .long("transform-proplists"))
         .get_matches();
 
     let files: Vec<&str> = match matches.values_of("input_files") {
@@ -67,10 +70,23 @@ fn main() {
     let verbose = matches.is_present("verbose");
     let parse_only = matches.is_present("parse");
 
+    let transform_proplists =
+        matches.is_present("transform-proplists");
     let parse_fn =
         if matches.is_present("bert2") {parse_bert2} else {parse_bert1};
     let output_fn =
-        if matches.is_present("json") {bertterm::pp_json} else {bertterm::pp_bert};
+        if matches.is_present("json") {
+            if transform_proplists {
+                bertterm::pp_json_proplist
+            } else {
+                bertterm::pp_json
+            }
+        } else {
+            if transform_proplists {
+                eprintln!("Warning: --transform-proplists is only valid with the --json flag");
+            }
+            bertterm::pp_bert
+        };
 
     let mut return_code = 0;
     for file in files {

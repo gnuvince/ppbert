@@ -36,6 +36,21 @@ impl BertTerm {
             | BertTerm::Map(_, _) => false
         }
     }
+
+    fn is_proplist(&self) -> bool {
+        match *self {
+            BertTerm::List(ref elems) => elems.iter().all(|e| e.is_proplist_entry()),
+            _ => false
+        }
+    }
+
+    fn is_proplist_entry(&self) -> bool {
+        match *self {
+            BertTerm::Tuple(ref elems) =>
+                elems.len() == 2 && elems[0].is_basic(),
+            _ => false
+        }
+    }
 }
 
 impl fmt::Display for BertTerm {
@@ -57,13 +72,22 @@ pub fn pp_bert(terms: Vec<BertTerm>, indent_width: usize, terms_per_line: usize)
 }
 
 /// Outputs a BertTerm as JSON to stdout.
-pub fn pp_json(terms: Vec<BertTerm>, _indent_width: usize, _terms_per_line: usize) {
+pub fn pp_json(terms: Vec<BertTerm>, _: usize, _: usize) {
     for t in terms {
-        let pp = JsonPrettyPrinter { term: &t };
+        let pp = JsonPrettyPrinter { term: &t, transform_proplists: false };
         println!("{}", pp);
     }
 }
 
+
+/// Outputs a BertTerm as JSON to stdout;
+/// Erlang proplists are converted to JSON objects.
+pub fn pp_json_proplist(terms: Vec<BertTerm>, _: usize, _: usize) {
+    for t in terms {
+        let pp = JsonPrettyPrinter { term: &t, transform_proplists: true };
+        println!("{}", pp);
+    }
+}
 
 
 pub struct PrettyPrinter<'a> {
@@ -203,18 +227,19 @@ impl <'a> PrettyPrinter<'a> {
 
 
 pub struct JsonPrettyPrinter<'a> {
-    term: &'a BertTerm
+    term: &'a BertTerm,
+    transform_proplists: bool
 }
 
 
 impl <'a> fmt::Display for JsonPrettyPrinter<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.term.write_json(f)
+        self.term.write_json(f, self.transform_proplists)
     }
 }
 
 impl BertTerm {
-    fn write_json(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn write_json(&self, f: &mut fmt::Formatter, transform_proplists: bool) -> fmt::Result {
         use self::BertTerm::*;
         match *self {
             Nil => f.write_str("[]"),
@@ -222,16 +247,20 @@ impl BertTerm {
             BigInt(ref b) => write!(f, "\"{}\"", b),
             Float(x) => write!(f, "{}", x),
             Atom(ref s) => write!(f, "\"{}\"", s),
-            List(ref terms) | Tuple(ref terms) => {
-                f.write_char('[')?;
-                let mut first = true;
-                for term in terms {
-                    if !first { f.write_char(',')?; }
-                    first = false;
-                    term.write_json(f)?;
+            List(ref terms) =>
+                if transform_proplists && self.is_proplist() {
+                    f.write_char('{')?;
+                    let mut first = true;
+                    for term in terms {
+                        if !first { f.write_char(',')?; }
+                        first = false;
+                        term.write_as_kv_pair(f, transform_proplists)?;
+                    }
+                    f.write_char('}')
+                } else {
+                    self.write_list(f, terms, transform_proplists)
                 }
-                f.write_char(']')
-            }
+            Tuple(ref terms) => self.write_list(f, terms, transform_proplists),
             Binary(ref bytes) | String(ref bytes) => {
                 f.write_char('"')?;
                 for b in bytes {
@@ -251,13 +280,36 @@ impl BertTerm {
                 for (key, value) in keys.iter().zip(values) {
                     if !first { f.write_char(',')?; }
                     first = false;
-                    key.write_json(f)?;
+                    key.write_json(f, transform_proplists)?;
                     f.write_char(':')?;
-                    value.write_json(f)?;
+                    value.write_json(f, transform_proplists)?;
                 }
                 f.write_char('}')
             }
         }
+    }
+
+    fn write_as_kv_pair(&self, f: &mut fmt::Formatter, transform_proplists: bool) -> fmt::Result {
+        match *self {
+            BertTerm::Tuple(ref kv) => {
+                assert_eq!(2, kv.len());
+                kv[0].write_json(f, transform_proplists)?;
+                f.write_char(':')?;
+                kv[1].write_json(f, transform_proplists)
+            }
+            _ => panic!("{} is not a proplist item", self)
+        }
+    }
+
+    fn write_list(&self, f: &mut fmt::Formatter, terms: &[BertTerm], transform_proplists: bool) -> fmt::Result {
+        f.write_char('[')?;
+        let mut first = true;
+        for term in terms {
+            if !first { f.write_char(',')?; }
+            first = false;
+            term.write_json(f, transform_proplists)?;
+        }
+        f.write_char(']')
     }
 }
 
