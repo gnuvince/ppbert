@@ -1,7 +1,7 @@
 extern crate ppbert;
 #[macro_use] extern crate clap;
 
-use std::io::{self, Read, Write};
+use std::io::{self, Read};
 use std::fs::File;
 use std::process::exit;
 use std::time::Instant;
@@ -49,6 +49,13 @@ fn main() {
              .help("Parse .bert2 files")
              .short("2")
              .long("bert2"))
+        .arg(Arg::with_name("json")
+             .help("Output in JSON")
+             .short("j")
+             .long("json"))
+        .arg(Arg::with_name("transform-proplists")
+             .help("Transform proplists into JSON objects (only valid with --json)")
+             .long("transform-proplists"))
         .get_matches();
 
     let files: Vec<&str> = match matches.values_of("input_files") {
@@ -62,27 +69,35 @@ fn main() {
         .unwrap_or(DEFAULT_MAX_TERMS_PER_LINE);
     let verbose = matches.is_present("verbose");
     let parse_only = matches.is_present("parse");
-    let bert2 = matches.is_present("bert2");
+
+    let transform_proplists =
+        matches.is_present("transform-proplists");
+    let parse_fn =
+        if matches.is_present("bert2") {parse_bert2} else {parse_bert1};
+    let output_fn =
+        if matches.is_present("json") {
+            if transform_proplists {
+                bertterm::pp_json_proplist
+            } else {
+                bertterm::pp_json
+            }
+        } else {
+            if transform_proplists {
+                eprintln!("Warning: --transform-proplists is only valid with the --json flag");
+            }
+            bertterm::pp_bert
+        };
 
     let mut return_code = 0;
     for file in files {
-        let res =
-            if bert2 {
-                handle_file(file, parse_only, verbose,
-                            indent_level, max_per_line,
-                            parse_bert2,
-                            bertterm::pp_bert2)
-            } else {
-                handle_file(file, parse_only, verbose,
-                            indent_level, max_per_line,
-                            parse_bert1,
-                            bertterm::pp_bert1)
-            };
+        let res = handle_file(file, parse_only, verbose,
+                              indent_level, max_per_line,
+                              parse_fn, output_fn);
         match res {
             Ok(()) => (),
             Err(e) => {
                 return_code = 1;
-                let _ = writeln!(&mut io::stderr(), "ppbert: {}: {}", file, e);
+                eprintln!("ppbert: {}: {}", file, e);
             }
         }
     }
@@ -116,7 +131,7 @@ fn handle_file<T>(
     let dur1 = now.elapsed();
 
     if verbose {
-        let _ = writeln!(&mut io::stderr(), "ppbert: parse time: {}.{:09}s", dur1.as_secs(), dur1.subsec_nanos());
+        eprintln!("ppbert: parse time: {}.{:09}s", dur1.as_secs(), dur1.subsec_nanos());
     }
 
     // Early exit if parse-only
@@ -130,16 +145,17 @@ fn handle_file<T>(
     let dur2 = now.elapsed();
 
     if verbose {
-        let _ = writeln!(&mut io::stderr(), "ppbert: print time: {}.{:09}s", dur2.as_secs(), dur2.subsec_nanos());
+        eprintln!("ppbert: print time: {}.{:09}s", dur2.as_secs(), dur2.subsec_nanos());
     }
 
     return Ok(());
 }
 
 
-fn parse_bert1(buf: Vec<u8>) -> Result<BertTerm> {
+fn parse_bert1(buf: Vec<u8>) -> Result<Vec<BertTerm>> {
     let mut parser = parser::Parser::new(buf);
-    return parser.parse();
+    let term = parser.parse()?;
+    return Ok(vec![term]);
 }
 
 fn parse_bert2(buf: Vec<u8>) -> Result<Vec<BertTerm>> {

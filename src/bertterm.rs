@@ -36,6 +36,21 @@ impl BertTerm {
             | BertTerm::Map(_, _) => false
         }
     }
+
+    fn is_proplist(&self) -> bool {
+        match *self {
+            BertTerm::List(ref elems) => elems.iter().all(|e| e.is_proplist_entry()),
+            _ => false
+        }
+    }
+
+    fn is_proplist_entry(&self) -> bool {
+        match *self {
+            BertTerm::Tuple(ref elems) =>
+                elems.len() == 2 && elems[0].is_basic(),
+            _ => false
+        }
+    }
 }
 
 impl fmt::Display for BertTerm {
@@ -48,17 +63,28 @@ impl fmt::Display for BertTerm {
 }
 
 
-/// Outputs a BertTerm to stdout.  Used for original .bert files.
-pub fn pp_bert1(t: BertTerm, indent_width: usize, max_terms: usize) {
-    let pp = PrettyPrinter::new(&t, indent_width, max_terms);
-    println!("{}", pp);
+/// Outputs a vector of BertTerms to stdout.
+pub fn pp_bert(terms: Vec<BertTerm>, indent_width: usize, terms_per_line: usize) {
+    for t in terms {
+        let pp = PrettyPrinter::new(&t, indent_width, terms_per_line);
+        println!("{}", pp);
+    }
+}
+
+/// Outputs a BertTerm as JSON to stdout.
+pub fn pp_json(terms: Vec<BertTerm>, _: usize, _: usize) {
+    for t in terms {
+        let pp = JsonPrettyPrinter { term: &t, transform_proplists: false };
+        println!("{}", pp);
+    }
 }
 
 
-/// Outputs a vector of BertTerms to stdout.  Used for rig's .bert2 files.
-pub fn pp_bert2(terms: Vec<BertTerm>, indent_width: usize, terms_per_line: usize) {
+/// Outputs a BertTerm as JSON to stdout;
+/// Erlang proplists are converted to JSON objects.
+pub fn pp_json_proplist(terms: Vec<BertTerm>, _: usize, _: usize) {
     for t in terms {
-        let pp = PrettyPrinter::new(&t, indent_width, terms_per_line);
+        let pp = JsonPrettyPrinter { term: &t, transform_proplists: true };
         println!("{}", pp);
     }
 }
@@ -200,7 +226,98 @@ impl <'a> PrettyPrinter<'a> {
 }
 
 
+pub struct JsonPrettyPrinter<'a> {
+    term: &'a BertTerm,
+    transform_proplists: bool
+}
+
+
+impl <'a> fmt::Display for JsonPrettyPrinter<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.term.write_json(f, self.transform_proplists)
+    }
+}
+
+impl BertTerm {
+    fn write_json(&self, f: &mut fmt::Formatter, transform_proplists: bool) -> fmt::Result {
+        use self::BertTerm::*;
+        match *self {
+            Nil => f.write_str("[]"),
+            Int(n) => write!(f, "{}", n),
+            BigInt(ref b) => write!(f, "\"{}\"", b),
+            Float(x) => write!(f, "{}", x),
+            Atom(ref s) => write!(f, "\"{}\"", s),
+            List(ref terms) =>
+                if transform_proplists && self.is_proplist() {
+                    f.write_char('{')?;
+                    let mut first = true;
+                    for term in terms {
+                        if !first { f.write_char(',')?; }
+                        first = false;
+                        term.write_as_kv_pair(f, transform_proplists)?;
+                    }
+                    f.write_char('}')
+                } else {
+                    self.write_list(f, terms, transform_proplists)
+                }
+            Tuple(ref terms) => self.write_list(f, terms, transform_proplists),
+            Binary(ref bytes) | String(ref bytes) => {
+                f.write_char('"')?;
+                for b in bytes {
+                    if must_be_escaped(*b) {
+                        write!(f, "\\{}", *b as char)?;
+                    } else if is_printable(*b) {
+                        f.write_char(*b as char)?;
+                    } else {
+                        write!(f, "\\u{:04x}", *b)?;
+                    }
+                }
+                f.write_char('"')
+            }
+            Map(ref keys, ref values) => {
+                f.write_char('{')?;
+                let mut first = true;
+                for (key, value) in keys.iter().zip(values) {
+                    if !first { f.write_char(',')?; }
+                    first = false;
+                    key.write_json(f, transform_proplists)?;
+                    f.write_char(':')?;
+                    value.write_json(f, transform_proplists)?;
+                }
+                f.write_char('}')
+            }
+        }
+    }
+
+    fn write_as_kv_pair(&self, f: &mut fmt::Formatter, transform_proplists: bool) -> fmt::Result {
+        match *self {
+            BertTerm::Tuple(ref kv) => {
+                assert_eq!(2, kv.len());
+                kv[0].write_json(f, transform_proplists)?;
+                f.write_char(':')?;
+                kv[1].write_json(f, transform_proplists)
+            }
+            _ => panic!("{} is not a proplist item", self)
+        }
+    }
+
+    fn write_list(&self, f: &mut fmt::Formatter, terms: &[BertTerm], transform_proplists: bool) -> fmt::Result {
+        f.write_char('[')?;
+        let mut first = true;
+        for term in terms {
+            if !first { f.write_char(',')?; }
+            first = false;
+            term.write_json(f, transform_proplists)?;
+        }
+        f.write_char(']')
+    }
+}
+
 
 fn is_printable(b: u8) -> bool {
     b >= 0x20 && b <= 0x7e
+}
+
+fn must_be_escaped(b: u8) -> bool {
+    b == b'"' || b == b'\\'
 }
