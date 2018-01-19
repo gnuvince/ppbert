@@ -1,7 +1,7 @@
 extern crate ppbert;
 #[macro_use] extern crate clap;
 
-use std::io::{self, Read, Write};
+use std::io::{self, Read};
 use std::fs::File;
 use std::process::exit;
 use std::time::Instant;
