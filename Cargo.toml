@@ -9,7 +9,7 @@ authors = ["Vincent Foley <vfoley@gmail.com>"]
 [dependencies]
 num = "0.1"
 encoding = "0.2.33"
-clap = "2.23.2"
+clap = "2.29.2"
 
 [[bin]]
 name = "ppbert"
