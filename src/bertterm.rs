@@ -47,7 +47,16 @@ impl BertTerm {
     fn is_proplist_entry(&self) -> bool {
         match *self {
             BertTerm::Tuple(ref elems) =>
-                elems.len() == 2 && elems[0].is_basic(),
+                elems.len() == 2 && elems[0].is_proplist_key(),
+            _ => false
+        }
+    }
+
+    fn is_proplist_key(&self) -> bool {
+        match *self {
+            BertTerm::Atom(_) => true,
+            BertTerm::String(_) => true,
+            BertTerm::Binary(_) => true,
             _ => false
         }
     }
