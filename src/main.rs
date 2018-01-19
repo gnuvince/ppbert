@@ -81,7 +81,7 @@ fn main() {
             Ok(()) => (),
             Err(e) => {
                 return_code = 1;
-                let _ = writeln!(&mut io::stderr(), "ppbert: {}: {}", file, e);
+                eprintln!("ppbert: {}: {}", file, e);
             }
         }
     }
@@ -115,7 +115,7 @@ fn handle_file<T>(
     let dur1 = now.elapsed();
 
     if verbose {
-        let _ = writeln!(&mut io::stderr(), "ppbert: parse time: {}.{:09}s", dur1.as_secs(), dur1.subsec_nanos());
+        eprintln!("ppbert: parse time: {}.{:09}s", dur1.as_secs(), dur1.subsec_nanos());
     }
 
     // Early exit if parse-only
@@ -129,7 +129,7 @@ fn handle_file<T>(
     let dur2 = now.elapsed();
 
     if verbose {
-        let _ = writeln!(&mut io::stderr(), "ppbert: print time: {}.{:09}s", dur2.as_secs(), dur2.subsec_nanos());
+        eprintln!("ppbert: print time: {}.{:09}s", dur2.as_secs(), dur2.subsec_nanos());
     }
 
     return Ok(());
