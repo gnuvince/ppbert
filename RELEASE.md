@@ -1,3 +1,9 @@
+# 0.3.1
+
+## Bug fixes
+
+- Ensure that only strings, binaries, and atoms are used as keys in a proplist.
+
 # 0.3.0
 
 ## New features
