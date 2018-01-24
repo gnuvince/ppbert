@@ -116,7 +116,7 @@ fn atom() {
     });
 
     assert!(match p(b"\x83\x73\x04abc") {
-        Err(BertError::EOF(_)) => true,
+        Err(BertError::NotEnoughData { .. }) => true,
         _ => false
     });
 
@@ -163,7 +163,7 @@ fn atom_utf8() {
     bert.extend(&atom_bytes);
     println!("{:?}", bert);
     assert!(match p(&bert) {
-        Err(BertError::EOF(_)) => true,
+        Err(BertError::NotEnoughData { .. }) => true,
         _ => false
     });
 
@@ -193,7 +193,7 @@ fn string() {
 
     // not enough characters
     assert!(match p(b"\x83\x6b\x00\x04foo") {
-        Err(BertError::EOF(_)) => true,
+        Err(BertError::NotEnoughData { .. }) => true,
         _ => false
     });
 }
@@ -213,7 +213,7 @@ fn binary() {
 
     // not enough characters
     assert!(match p(b"\x83\x6d\x00\x00\x00\x04foo") {
-        Err(BertError::EOF(_)) => true,
+        Err(BertError::NotEnoughData { .. }) => true,
         _ => false
     });
 }

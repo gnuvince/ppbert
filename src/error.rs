@@ -16,7 +16,7 @@ pub enum BertError {
     InvalidLatin1Atom(usize),
     ExtraData(usize),
     VarintTooLarge(usize),
-    EOF(usize)
+    NotEnoughData { offset: usize, needed: usize, available: usize }
 }
 
 impl BertError {
@@ -30,7 +30,7 @@ impl BertError {
             | InvalidLatin1Atom(offset)
             | ExtraData(offset)
             | VarintTooLarge(offset)
-            | EOF(offset) => Some(offset),
+            | NotEnoughData { offset, .. } => Some(offset),
 
             _ => None
         }
@@ -40,6 +40,8 @@ impl BertError {
         use self::BertError::*;
         match *self {
             InvalidTag(_, tag) => Some(format!("{}", tag)),
+            NotEnoughData { needed, available, .. } =>
+                Some(format!("needed {} bytes, only {} available", needed, available)),
             _ => None
         }
     }
@@ -76,7 +78,7 @@ impl Error for BertError {
             InvalidLatin1Atom(_) => "Latin-1 atom is not correctly encoded",
             ExtraData(_) => "extra data after the BERT term",
             VarintTooLarge(_) => "varint is too large (greater than 2^64-1)",
-            EOF(_) => "no more data is available",
+            NotEnoughData { .. } => "no enough data is available",
         }
     }
 }

@@ -159,7 +159,11 @@ impl Parser {
 
     fn atom(&mut self, len: usize) -> Result<BertTerm> {
         if !self.can_read(len) {
-            return Err(BertError::EOF(self.pos));
+            return Err(BertError::NotEnoughData {
+                offset: self.pos,
+                needed: len,
+                available: self.contents.len() - self.pos
+            })
         }
 
         let offset = self.pos;
@@ -192,7 +196,11 @@ impl Parser {
 
     fn atom_utf8(&mut self, len: usize) -> Result<BertTerm> {
         if !self.can_read(len) {
-            return Err(BertError::EOF(self.pos));
+            return Err(BertError::NotEnoughData {
+                offset: self.pos,
+                needed: len,
+                available: self.contents.len() - self.pos
+            })
         }
 
         let offset = self.pos;
@@ -218,7 +226,11 @@ impl Parser {
     fn string(&mut self) -> Result<BertTerm> {
         let len = self.eat_u16_be()? as usize;
         if !self.can_read(len) {
-            return Err(BertError::EOF(self.pos));
+            return Err(BertError::NotEnoughData {
+                offset: self.pos,
+                needed: len,
+                available: self.contents.len() - self.pos
+            })
         }
 
         let mut bytes = Vec::with_capacity(len);
@@ -234,7 +246,11 @@ impl Parser {
     fn binary(&mut self) -> Result<BertTerm> {
         let len = self.eat_u32_be()? as usize;
         if !self.can_read(len) {
-            return Err(BertError::EOF(self.pos));
+            return Err(BertError::NotEnoughData {
+                offset: self.pos,
+                needed: len,
+                available: self.contents.len() - self.pos
+            })
         }
 
         let mut bytes = Vec::with_capacity(len);
@@ -296,7 +312,11 @@ impl Parser {
 
     fn peek(&self) -> Result<u8> {
         if self.eof() {
-            return Err(BertError::EOF(self.pos));
+            return Err(BertError::NotEnoughData {
+                offset: self.pos,
+                needed: 1,
+                available: 0
+            });
         } else {
             return Ok(self.peek_u8_unchecked(0));
         }
@@ -312,7 +332,11 @@ impl Parser {
 
     fn eat_u8(&mut self) -> Result<u8> {
         if !self.can_read(1) {
-            return Err(BertError::EOF(self.pos));
+            return Err(BertError::NotEnoughData {
+                offset: self.pos,
+                needed: 1,
+                available: self.contents.len() - self.pos
+            });
         }
         let b = self.peek_u8_unchecked(0);
         self.pos += 1;
@@ -326,7 +350,11 @@ impl Parser {
 
     fn eat_u16_be(&mut self) -> Result<u16> {
         if !self.can_read(2) {
-            return Err(BertError::EOF(self.pos));
+            return Err(BertError::NotEnoughData {
+                offset: self.pos,
+                needed: 2,
+                available: self.contents.len() - self.pos
+            });
         }
         let b0 = self.peek_u8_unchecked(0) as u16;
         let b1 = self.peek_u8_unchecked(1) as u16;
@@ -336,7 +364,11 @@ impl Parser {
 
     fn eat_i32_be(&mut self) -> Result<i32> {
         if !self.can_read(4) {
-            return Err(BertError::EOF(self.pos));
+            return Err(BertError::NotEnoughData {
+                offset: self.pos,
+                needed: 4,
+                available: self.contents.len() - self.pos
+            });
         }
         let b0 = self.peek_u8_unchecked(0) as i32;
         let b1 = self.peek_u8_unchecked(1) as i32;
@@ -348,7 +380,11 @@ impl Parser {
 
     fn eat_u32_be(&mut self) -> Result<u32> {
         if !self.can_read(4) {
-            return Err(BertError::EOF(self.pos));
+            return Err(BertError::NotEnoughData {
+                offset: self.pos,
+                needed: 4,
+                available: self.contents.len() - self.pos
+            });
         }
         let b0 = self.peek_u8_unchecked(0) as u32;
         let b1 = self.peek_u8_unchecked(1) as u32;
@@ -360,7 +396,11 @@ impl Parser {
 
     fn eat_u64_be(&mut self) -> Result<u64> {
         if !self.can_read(8) {
-            return Err(BertError::EOF(self.pos));
+            return Err(BertError::NotEnoughData {
+                offset: self.pos,
+                needed: 8,
+                available: self.contents.len() - self.pos
+            });
         }
         let b0 = self.peek_u8_unchecked(0) as u64;
         let b1 = self.peek_u8_unchecked(1) as u64;
