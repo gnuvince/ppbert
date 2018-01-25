@@ -41,7 +41,7 @@ impl BertError {
         match *self {
             InvalidTag(_, tag) => Some(format!("{}", tag)),
             NotEnoughData { needed, available, .. } =>
-                Some(format!("needed {} bytes, only {} available", needed, available)),
+                Some(format!("bytes needed: {}; bytes available: {}", needed, available)),
             _ => None
         }
     }
@@ -78,7 +78,7 @@ impl Error for BertError {
             InvalidLatin1Atom(_) => "Latin-1 atom is not correctly encoded",
             ExtraData(_) => "extra data after the BERT term",
             VarintTooLarge(_) => "varint is too large (greater than 2^64-1)",
-            NotEnoughData { .. } => "no enough data is available",
+            NotEnoughData { .. } => "no enough data available",
         }
     }
 }
