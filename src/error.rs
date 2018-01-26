@@ -16,7 +16,10 @@ pub enum BertError {
     InvalidLatin1Atom(usize),
     ExtraData(usize),
     VarintTooLarge(usize),
-    NotEnoughData { offset: usize, needed: usize, available: usize }
+    NotEnoughData { offset: usize, needed: usize, available: usize },
+
+    // conversion errors
+    NotABertFile,
 }
 
 impl BertError {
@@ -31,7 +34,6 @@ impl BertError {
             | ExtraData(offset)
             | VarintTooLarge(offset)
             | NotEnoughData { offset, .. } => Some(offset),
-
             _ => None
         }
     }
@@ -79,6 +81,7 @@ impl Error for BertError {
             ExtraData(_) => "extra data after the BERT term",
             VarintTooLarge(_) => "varint is too large (greater than 2^64-1)",
             NotEnoughData { .. } => "no enough data available",
+            NotABertFile => "not a valid .bert file",
         }
     }
 }

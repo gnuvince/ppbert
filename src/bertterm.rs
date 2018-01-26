@@ -2,6 +2,7 @@ use std::fmt::{self, Write};
 
 use num::bigint;
 
+use consts::*;
 
 pub const DEFAULT_INDENT_WIDTH: usize = 2;
 pub const DEFAULT_MAX_TERMS_PER_LINE: usize = 4;
@@ -329,4 +330,128 @@ fn is_printable(b: u8) -> bool {
 
 fn must_be_escaped(b: u8) -> bool {
     b == b'"' || b == b'\\'
+}
+
+
+impl BertTerm {
+    pub fn write_bert(&self) -> Vec<u8> {
+        let mut out: Vec<u8> = Vec::with_capacity(4096);
+        out.push(BERT_MAGIC_NUMBER);
+        self.dump_bert(&mut out);
+        return out;
+    }
+
+    fn dump_bert(&self, out: &mut Vec<u8>) {
+        match *self {
+            BertTerm::Nil => out.push(NIL_EXT),
+            BertTerm::Int(n) => {
+                if n >= 0 && n < 256 {
+                    out.push(SMALL_INTEGER_EXT);
+                    out.push(n as u8);
+                } else {
+                    out.push(INTEGER_EXT);
+                    out.push( ((n >> 24) & 0xff) as u8 );
+                    out.push( ((n >> 16) & 0xff) as u8 );
+                    out.push( ((n >> 8) & 0xff) as u8 );
+                    out.push( (n & 0xff) as u8 );
+                }
+            }
+            BertTerm::BigInt(ref b) => {
+                let (sign, bytes) = b.to_bytes_le();
+                let len = bytes.len();
+                if len < 256 {
+                    out.push(SMALL_BIG_EXT);
+                    out.push(len as u8);
+                } else {
+                    out.push(LARGE_BIG_EXT);
+                    out.push( ((len >> 24) & 0xff) as u8 );
+                    out.push( ((len >> 16) & 0xff) as u8 );
+                    out.push( ((len >> 8) & 0xff) as u8 );
+                    out.push( (len & 0xff) as u8 );
+                }
+                if sign == bigint::Sign::Minus {
+                    out.push(1);
+                } else {
+                    out.push(0);
+                }
+                out.extend(bytes);
+            }
+            BertTerm::Float(f) => {
+                let n = f.to_bits();
+                out.push(NEW_FLOAT_EXT);
+                out.push( ((n >> 56) & 0xff) as u8 );
+                out.push( ((n >> 48) & 0xff) as u8 );
+                out.push( ((n >> 40) & 0xff) as u8 );
+                out.push( ((n >> 32) & 0xff) as u8 );
+                out.push( ((n >> 24) & 0xff) as u8 );
+                out.push( ((n >> 16) & 0xff) as u8 );
+                out.push( ((n >> 8) & 0xff) as u8 );
+                out.push( (n & 0xff) as u8 );
+            }
+            BertTerm::Tuple(ref terms) => {
+                let len = terms.len();
+                if len < 256 {
+                    out.push(SMALL_TUPLE_EXT);
+                    out.push(len as u8);
+                } else {
+                    out.push(LARGE_TUPLE_EXT);
+                    out.push( ((len >> 24) & 0xff) as u8 );
+                    out.push( ((len >> 16) & 0xff) as u8 );
+                    out.push( ((len >>  8) & 0xff) as u8 );
+                    out.push( (len & 0xff) as u8 );
+                }
+                for t in terms {
+                    t.dump_bert(out);
+                }
+            }
+            BertTerm::List(ref terms) => {
+                let len = terms.len();
+                out.push(LIST_EXT);
+                out.push( ((len >> 24) & 0xff) as u8 );
+                out.push( ((len >> 16) & 0xff) as u8 );
+                out.push( ((len >>  8) & 0xff) as u8 );
+                out.push( (len & 0xff) as u8 );
+                for t in terms {
+                    t.dump_bert(out);
+                }
+                out.push(NIL_EXT);
+            }
+            BertTerm::Map(ref keys, ref vals) => {
+                let len = keys.len();
+                out.push(MAP_EXT);
+                out.push( ((len >> 24) & 0xff) as u8 );
+                out.push( ((len >> 16) & 0xff) as u8 );
+                out.push( ((len >>  8) & 0xff) as u8 );
+                out.push( (len & 0xff) as u8 );
+                for (k, v) in keys.iter().zip(vals) {
+                    k.dump_bert(out);
+                    v.dump_bert(out);
+                }
+            }
+            BertTerm::Atom(ref chars) => {
+                let bytes = chars.bytes();
+                let len = bytes.len();
+                out.push(ATOM_UTF8_EXT);
+                out.push( ((len >> 8) & 0xff) as u8 );
+                out.push( (len & 0xff) as u8 );
+                out.extend(bytes);
+            }
+            BertTerm::String(ref bytes) => {
+                let len = bytes.len();
+                out.push(STRING_EXT);
+                out.push( ((len >> 8) & 0xff) as u8 );
+                out.push( (len & 0xff) as u8 );
+                out.extend(bytes);
+            }
+            BertTerm::Binary(ref bytes) => {
+                let len = bytes.len();
+                out.push(BINARY_EXT);
+                out.push( ((len >> 24) & 0xff) as u8 );
+                out.push( ((len >> 16) & 0xff) as u8 );
+                out.push( ((len >>  8) & 0xff) as u8 );
+                out.push( (len & 0xff) as u8 );
+                out.extend(bytes);
+            }
+        }
+    }
 }

@@ -10,10 +10,16 @@ authors = ["Vincent Foley <vfoley@gmail.com>"]
 num = "0.1"
 encoding = "0.2.33"
 clap = "2.29.2"
+rayon = "0.9.0"
 
 [[bin]]
 name = "ppbert"
 path = "src/main.rs"
+bench = false
+
+[[bin]]
+name = "bert-convert"
+path = "src/convert.rs"
 bench = false
 
 [profile.release]
