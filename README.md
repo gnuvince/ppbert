@@ -1,14 +1,17 @@
+# Table of contents
+
+- [ppbert](#ppbert)
+- [bert-convert](#bert-convert)
+
 # ppbert
 
-A simple command-line utility to pretty print structures encoded using
+A command-line utility to pretty print structures encoded using
 Erlang's [External Term Format](http://erlang.org/doc/apps/erts/erl_ext_dist.html).
-The input is read from *stdin* or a file and written to *stdout*, making ppbert
-a good candidate for shell pipelines.
+The input is read from *stdin* or a file and written to *stdout*,
+making ppbert a good candidate for shell pipelines.
 
-At the moment, ppbert supports only a subset of the field types of the
-External Term Format:
-
-Supported types:
+At the moment, ppbert supports the following subset of the External
+Term Format:
 
 - Small integers (tag: 97);
 - Integers (tag: 98);
@@ -27,20 +30,25 @@ Supported types:
 
 ```
 $ ppbert -h
-ppbert 0.2.2
+ppbert 0.4.0
 Vincent Foley
 Pretty print structure encoded in Erlang's External Term Format
 
 USAGE:
-    ppbert [OPTIONS] [<FILES>]
+    ppbert [FLAGS] [OPTIONS] [FILES]...
 
 FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
+    -2, --bert2                  Parse .bert2 files
+    -h, --help                   Prints help information
+    -j, --json                   Output in JSON
+    -p, --parse                  Parse the input, don't pretty print it
+        --transform-proplists    Transform proplists into JSON objects (only valid with --json)
+    -V, --version                Prints version information
+    -v, --verbose                Enable verbose mode
 
 OPTIONS:
-    -i, --indent-width <num>
-    -m, --max-terms-per-line <num>
+    -i, --indent-width <num>          Number of spaces to indent nested terms
+    -m, --max-terms-per-line <num>    Number of spaces to indent nested terms
 
 ARGS:
     <FILES>...
@@ -102,3 +110,39 @@ sys     0m0.452s
 - ~~Add flags to control the pretty printing (e.g., indentation width, number of basic values on a single line, etc.).~~
 - Add a [jq](https://stedolan.github.io/jq/)-like query language.
 - ~~Write a man page.~~
+
+
+# bert-convert
+
+A command-line utility to convert a bert file encoded in
+[bertconf's](https://github.com/ferd/bertconf) DB format to
+[rig's](https://github.com/lpgauth/rig) format.
+
+## Usage
+
+```
+$ bert-convert -h
+bert-convert 0.4.0
+Vincent Foley
+Convert bertconf .bert files to rig .bert2 files
+
+USAGE:
+    bert-convert [FLAGS] [OPTIONS] [FILES]...
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+    -v, --verbose    Enables verbose mode
+
+OPTIONS:
+    -d, --output-dir <DIR>    Selects the output directory [default: .]
+
+ARGS:
+    <FILES>...
+
+$ bert-convert -v -d /tmp/bert2 large.bert
+bert-convert: large.bert: Parse time: 0.556925379s; Dump time: 0.580329024s
+
+$ ls /tmp/bert2
+large.bert2
+```
