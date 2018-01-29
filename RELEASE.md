@@ -1,3 +1,13 @@
+0.4.1
+=====
+
+New features
+------------
+
+- A new binary, bert-convert, was added to convert bertconf's .bert
+  files to rig's .bert2 files.
+
+
 0.4.0
 =====
 
