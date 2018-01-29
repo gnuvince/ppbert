@@ -17,8 +17,10 @@ use ppbert::bertterm::{
 use ppbert::error::Result;
 use ppbert::parser;
 
+const PROG_NAME: &str = "ppbert";
+
 fn main() {
-    let matches = App::new("ppbert")
+    let matches = App::new(PROG_NAME)
         .version(crate_version!())
         .author("Vincent Foley")
         .about("Pretty print structure encoded in Erlang's External Term Format")
@@ -97,7 +99,7 @@ fn main() {
             Ok(()) => (),
             Err(e) => {
                 return_code = 1;
-                eprintln!("ppbert: {}: {}", file, e);
+                eprintln!("{}: {}: {}", PROG_NAME, file, e);
             }
         }
     }
@@ -131,7 +133,8 @@ fn handle_file<T>(
     let dur1 = now.elapsed();
 
     if verbose {
-        eprintln!("ppbert: parse time: {}.{:09}s", dur1.as_secs(), dur1.subsec_nanos());
+        eprintln!("{}: parse time: {}.{:09}s",
+                  PROG_NAME, dur1.as_secs(), dur1.subsec_nanos());
     }
 
     // Early exit if parse-only
@@ -145,7 +148,8 @@ fn handle_file<T>(
     let dur2 = now.elapsed();
 
     if verbose {
-        eprintln!("ppbert: print time: {}.{:09}s", dur2.as_secs(), dur2.subsec_nanos());
+        eprintln!("{}: print time: {}.{:09}s",
+                  PROG_NAME, dur2.as_secs(), dur2.subsec_nanos());
     }
 
     return Ok(());
