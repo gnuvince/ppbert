@@ -5,7 +5,7 @@ extern crate ppbert;
 use clap::{Arg, App};
 use rayon::prelude::*;
 
-use std::io::{self, Read, Write};
+use std::io::{self, Read, Write, BufWriter};
 use std::fs::File;
 use std::path::PathBuf;
 use std::process::exit;
@@ -109,11 +109,12 @@ fn create_bert2_file(term: BertTerm, output_dir: &PathBuf) -> Result<(), BertErr
                     if let BertTerm::List(ref items) = tup_terms[1] {
                         let file_name = format!("{}.bert2", table_name);
                         let path = output_dir.join(file_name);
-                        let mut f = File::create(path)?;
+                        let f = File::create(path)?;
+                        let mut stream = BufWriter::new(f);
                         for item in items {
                             let item_bert = item.write_bert();
-                            f.write_all(&usize_to_leb128(item_bert.len()))?;
-                            f.write_all(&item_bert)?;
+                            stream.write_all(&usize_to_leb128(item_bert.len()))?;
+                            stream.write_all(&item_bert)?;
                         }
                     } else {
                         return Err(BertError::NotABertFile);
