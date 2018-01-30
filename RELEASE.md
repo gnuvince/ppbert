@@ -1,3 +1,15 @@
+0.4.2
+=====
+
+Bug fixes
+---------
+
+- A parse error in bert-convert will show an error message rather than
+  panic.
+- Piping ppbert into another command will not cause a broken pipe
+  error if the stream is not consumed entirely.
+
+
 0.4.1
 =====
 

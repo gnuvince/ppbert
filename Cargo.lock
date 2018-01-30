@@ -203,7 +203,7 @@ dependencies = [
 
 [[package]]
 name = "ppbert"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "clap 2.29.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "encoding 0.2.33 (registry+https://github.com/rust-lang/crates.io-index)",
