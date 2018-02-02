@@ -9,7 +9,6 @@ authors = ["Vincent Foley <vfoley@gmail.com>"]
 [dependencies]
 num = "0.1"
 encoding = "0.2.33"
-clap = "2.29.2"
 rayon = "0.9.0"
 
 [[bin]]
@@ -26,3 +25,7 @@ bench = false
 debug = true
 lto = true
 panic = "abort"
+
+[dependencies.clap]
+version = "2.29.2"
+default-features = false
