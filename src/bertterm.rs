@@ -77,7 +77,8 @@ impl fmt::Display for BertTerm {
 
 /// Outputs a vector of BertTerms to stdout.
 pub fn pp_bert(terms: Vec<BertTerm>, indent_width: usize, terms_per_line: usize) {
-    let mut stdout = io::stdout();
+    let stdout = io::stdout();
+    let mut stdout = stdout.lock();
     for t in terms {
         let pp = PrettyPrinter::new(&t, indent_width, terms_per_line);
         let _ = writeln!(stdout, "{}", pp);
@@ -86,7 +87,8 @@ pub fn pp_bert(terms: Vec<BertTerm>, indent_width: usize, terms_per_line: usize)
 
 /// Outputs a BertTerm as JSON to stdout.
 pub fn pp_json(terms: Vec<BertTerm>, _: usize, _: usize) {
-    let mut stdout = io::stdout();
+    let stdout = io::stdout();
+    let mut stdout = stdout.lock();
     for t in terms {
         let pp = JsonPrettyPrinter { term: &t, transform_proplists: false };
         let _ = writeln!(stdout, "{}", pp);
@@ -97,9 +99,11 @@ pub fn pp_json(terms: Vec<BertTerm>, _: usize, _: usize) {
 /// Outputs a BertTerm as JSON to stdout;
 /// Erlang proplists are converted to JSON objects.
 pub fn pp_json_proplist(terms: Vec<BertTerm>, _: usize, _: usize) {
+    let stdout = io::stdout();
+    let mut stdout = stdout.lock();
     for t in terms {
         let pp = JsonPrettyPrinter { term: &t, transform_proplists: true };
-        println!("{}", pp);
+        let _ = writeln!(stdout, "{}", pp);
     }
 }
 
