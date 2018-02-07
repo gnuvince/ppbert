@@ -1,5 +1,6 @@
 use std::fmt::{self, Write as FmtWrite};
 use std::io::{self, Write as IoWrite};
+use std::iter;
 
 use num::bigint;
 
@@ -232,9 +233,9 @@ impl <'a> PrettyPrinter<'a> {
     }
 
     fn indentation(&self, depth: usize) -> String {
-        ::std::iter::once('\n')
-            .chain((0 .. depth * self.indent_width).map(|_| ' '))
-            .collect()
+        let nl = iter::once('\n');
+        let spaces = iter::repeat(' ').take(depth * self.indent_width);
+        nl.chain(spaces).collect()
     }
 }
 
