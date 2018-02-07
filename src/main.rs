@@ -119,12 +119,18 @@ fn handle_file<T>(
 
     // Read file or stdin into buffer
     let mut buf: Vec<u8> = Vec::new();
+    let now = Instant::now();
     if file == "-" {
         let mut stdin = io::stdin();
         stdin.read_to_end(&mut buf)?;
     } else {
         let mut f = File::open(file)?;
         f.read_to_end(&mut buf)?;
+    }
+    let dur0 = now.elapsed();
+    if verbose {
+        eprintln!("{}: read time: {}.{:09}",
+                  PROG_NAME, dur0.as_secs(), dur0.subsec_nanos());
     }
 
     // Parse input
@@ -133,7 +139,7 @@ fn handle_file<T>(
     let dur1 = now.elapsed();
 
     if verbose {
-        eprintln!("{}: parse time: {}.{:09}s",
+        eprintln!("{}: parse time: {}.{:09}",
                   PROG_NAME, dur1.as_secs(), dur1.subsec_nanos());
     }
 
@@ -148,7 +154,7 @@ fn handle_file<T>(
     let dur2 = now.elapsed();
 
     if verbose {
-        eprintln!("{}: print time: {}.{:09}s",
+        eprintln!("{}: print time: {}.{:09}",
                   PROG_NAME, dur2.as_secs(), dur2.subsec_nanos());
     }
 
