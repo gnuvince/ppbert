@@ -87,7 +87,7 @@ fn handle(file: &str, verbose: bool, output_dir: &PathBuf) -> Result<(), BertErr
     create_bert2_file(term, output_dir)?;
     let dur2 = top.elapsed();
     if verbose {
-        eprintln!("{}: {}: Parse time: {}.{:09}s; Dump time: {}.{:09}s",
+        eprintln!("{}: {}: Parse time: {}.{:09}; Dump time: {}.{:09}",
                   PROG_NAME, file,
                   dur1.as_secs(), dur1.subsec_nanos(),
                   dur2.as_secs(), dur2.subsec_nanos());
