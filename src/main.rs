@@ -72,10 +72,8 @@ fn main() {
     let verbose = matches.is_present("verbose");
     let parse_only = matches.is_present("parse");
 
-    let transform_proplists =
-        matches.is_present("transform-proplists");
-    let parse_fn =
-        if matches.is_present("bert2") {parse_bert2} else {parse_bert1};
+    let transform_proplists = matches.is_present("transform-proplists");
+    let parse_fn = if matches.is_present("bert2") { parse_bert2 } else { parse_bert1 };
     let output_fn =
         if matches.is_present("json") {
             if transform_proplists {
@@ -85,7 +83,8 @@ fn main() {
             }
         } else {
             if transform_proplists {
-                eprintln!("Warning: --transform-proplists is only valid with the --json flag");
+                eprintln!("{}: warning: --transform-proplists is only valid with the --json flag",
+                          PROG_NAME);
             }
             bertterm::pp_bert
         };
