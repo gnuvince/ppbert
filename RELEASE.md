@@ -1,3 +1,15 @@
+0.5.0
+=====
+
+Interface changes
+-----------------
+
+- clap's extra features (e.g., flag name suggestions) have been removed.
+- A warning's format was changed to conform to usual Unix style.
+- The 's' (for 'seconds') after times in verbose mode has been removed.
+- The time required to read a file has been added to ppbert's verbose mode.
+
+
 0.4.2
 =====
 
