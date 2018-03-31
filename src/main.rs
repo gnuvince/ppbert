@@ -128,20 +128,20 @@ fn handle_file<T>(
         let mut rdr = BufReader::new(f);
         rdr.read_to_end(&mut buf)?;
     }
-    let dur0 = now.elapsed();
+    let dur = now.elapsed();
     if verbose {
         eprintln!("{}: read time: {}.{:09}",
-                  PROG_NAME, dur0.as_secs(), dur0.subsec_nanos());
+                  PROG_NAME, dur.as_secs(), dur.subsec_nanos());
     }
 
     // Parse input
     let now = Instant::now();
     let parse_output = parse_fn(buf)?;
-    let dur1 = now.elapsed();
+    let dur = now.elapsed();
 
     if verbose {
         eprintln!("{}: parse time: {}.{:09}",
-                  PROG_NAME, dur1.as_secs(), dur1.subsec_nanos());
+                  PROG_NAME, dur.as_secs(), dur.subsec_nanos());
     }
 
     // Early exit if parse-only
@@ -152,11 +152,11 @@ fn handle_file<T>(
     // Pretty print
     let now = Instant::now();
     pp_fn(parse_output, indent, terms_per_line);
-    let dur2 = now.elapsed();
+    let dur = now.elapsed();
 
     if verbose {
         eprintln!("{}: print time: {}.{:09}",
-                  PROG_NAME, dur2.as_secs(), dur2.subsec_nanos());
+                  PROG_NAME, dur.as_secs(), dur.subsec_nanos());
     }
 
     return Ok(());
