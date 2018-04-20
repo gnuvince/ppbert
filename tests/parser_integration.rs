@@ -1,8 +1,6 @@
 extern crate ppbert;
 extern crate num;
 
-use std::mem::transmute;
-
 use num::bigint;
 use num::bigint::ToBigInt;
 
@@ -83,7 +81,8 @@ fn old_float() {
 
 #[test]
 fn new_float() {
-    let float_as_u64: u64 = unsafe { transmute(3.141592) };
+    let pi: f64 = 3.141592;
+    let float_as_u64: u64 = pi.to_bits();
     let bytes = &[
         131, 70,
         (float_as_u64 >> 56) as u8 & 0xff_u8,
