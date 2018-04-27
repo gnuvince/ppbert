@@ -1,3 +1,12 @@
+0.5.1
+=====
+
+Tooling changes
+---------------
+
+- Added a small shell script, build_musl.sh, to create a musl binary.
+
+
 0.5.0
 =====
 
