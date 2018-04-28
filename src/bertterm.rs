@@ -154,15 +154,20 @@ impl <'a> PrettyPrinter<'a> {
                     f: &mut fmt::Formatter,
                     open: &str,
                     close: &str) -> fmt::Result {
-        f.write_str(open)?;
+        // It's faster to write all the characters in a String
+        // and then write a str than it is to write each character
+        // individually.
+        let mut buf = String::with_capacity(4096);
+        buf.push_str(open);
         for &b in bytes {
             if is_printable(b) {
-                f.write_char(b as char)?;
+                buf.push(b as char);
             } else {
-                write!(f, "\\x{:02x}", b)?;
+                buf.push_str(&format!("\\x{:02x}", b));
             }
         }
-        f.write_str(close)
+        buf.push_str(close);
+        f.write_str(&buf)
     }
 
 
@@ -280,17 +285,20 @@ impl BertTerm {
                 }
             Tuple(ref terms) => self.write_list(f, terms, transform_proplists),
             Binary(ref bytes) | String(ref bytes) => {
-                f.write_char('"')?;
+                let mut buf = ::std::string::String::with_capacity(4096);
+                buf.push('"');
                 for b in bytes {
                     if must_be_escaped(*b) {
-                        write!(f, "\\{}", *b as char)?;
+                        buf.push('\\');
+                        buf.push(*b as char);
                     } else if is_printable(*b) {
-                        f.write_char(*b as char)?;
+                        buf.push(*b as char);
                     } else {
-                        write!(f, "\\u{:04x}", *b)?;
+                        buf.push_str(&format!("\\u{:04x}", *b));
                     }
                 }
-                f.write_char('"')
+                buf.push('"');
+                f.write_str(&buf)
             }
             Map(ref keys, ref values) => {
                 f.write_char('{')?;
