@@ -1,3 +1,13 @@
+0.5.2
+=====
+
+Performance improvement
+-----------------------
+
+- Nearly halved the time it takes to pretty print my benchmark .bert files
+  by manually buffering the output of strings and binaries.
+
+
 0.5.1
 =====
 
