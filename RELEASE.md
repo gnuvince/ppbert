@@ -1,3 +1,14 @@
+0.6.0
+=====
+
+New features
+------------
+
+- Support for `disk_log` files.  The Erlang module, `disk_log`,
+  writes BERT-encoded terms to files on disk; the new `--disk-log` (`-d`)
+  flag allows ppbert to read this file format.
+
+
 0.5.2
 =====
 
