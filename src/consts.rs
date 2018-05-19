@@ -16,3 +16,8 @@ pub const ATOM_UTF8_EXT: u8 = 118;
 pub const SMALL_ATOM_UTF8_EXT: u8 = 119;
 pub const NEW_FLOAT_EXT: u8 = 70;
 pub const MAP_EXT: u8 = 116;
+
+pub const DISK_LOG_MAGIC: u32 = 0x01020304;
+pub const DISK_LOG_OPENED: u32 = 0x06070809;
+pub const DISK_LOG_CLOSED: u32 = 0x63584d0b;
+pub const DISK_LOG_TERM_MAGIC: u32 = 0x62574c41;

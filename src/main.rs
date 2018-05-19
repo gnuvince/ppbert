@@ -51,6 +51,10 @@ fn main() {
              .help("Parses .bert2 files")
              .short("2")
              .long("bert2"))
+        .arg(Arg::with_name("disk_log")
+             .help("Parses disk_log files")
+             .short("d")
+             .long("--disk-log"))
         .arg(Arg::with_name("json")
              .help("Outputs in JSON")
              .short("j")
@@ -73,7 +77,14 @@ fn main() {
     let parse_only = matches.is_present("parse");
 
     let transform_proplists = matches.is_present("transform-proplists");
-    let parse_fn = if matches.is_present("bert2") { parse_bert2 } else { parse_bert1 };
+    let parse_fn =
+        if matches.is_present("bert2") {
+            parse_bert2
+        } else if matches.is_present("disk_log") {
+            parse_disk_log
+        } else {
+            parse_bert1
+        };
     let output_fn =
         if matches.is_present("json") {
             if transform_proplists {
@@ -172,4 +183,9 @@ fn parse_bert1(buf: Vec<u8>) -> Result<Vec<BertTerm>> {
 fn parse_bert2(buf: Vec<u8>) -> Result<Vec<BertTerm>> {
     let mut parser = parser::Parser::new(buf);
     return parser.parse_bert2();
+}
+
+fn parse_disk_log(buf: Vec<u8>) -> Result<Vec<BertTerm>> {
+    let mut parser = parser::Parser::new(buf);
+    return parser.parse_disk_log();
 }

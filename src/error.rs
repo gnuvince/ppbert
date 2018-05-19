@@ -17,6 +17,7 @@ pub enum BertError {
     ExtraData(usize),
     VarintTooLarge(usize),
     NotEnoughData { offset: usize, needed: usize, available: usize },
+    InvalidDiskLogOpenedStatus(usize),
 
     // conversion errors
     NotABertFile,
@@ -33,6 +34,7 @@ impl BertError {
             | InvalidLatin1Atom(offset)
             | ExtraData(offset)
             | VarintTooLarge(offset)
+            | InvalidDiskLogOpenedStatus(offset)
             | NotEnoughData { offset, .. } => Some(offset),
             _ => None
         }
@@ -82,6 +84,7 @@ impl Error for BertError {
             VarintTooLarge(_) => "varint is too large (greater than 2^64-1)",
             NotEnoughData { .. } => "no enough data available",
             NotABertFile => "not a valid .bert file",
+            InvalidDiskLogOpenedStatus(_) => "invalid file opened status",
         }
     }
 }

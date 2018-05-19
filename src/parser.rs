@@ -24,11 +24,10 @@ impl Parser {
     pub fn parse(&mut self) -> Result<BertTerm> {
         let () = self.magic_number()?;
         let term = self.bert_term()?;
-        if self.eof() {
-            return Ok(term);
-        } else {
+        if !self.eof() {
             return Err(BertError::ExtraData(self.pos));
         }
+        return Ok(term);
     }
 
     pub fn parse_bert2(&mut self) -> Result<Vec<BertTerm>> {
@@ -39,11 +38,19 @@ impl Parser {
             let t = self.bert_term()?;
             terms.push(t);
         }
-        if self.eof() {
-            return Ok(terms);
-        } else {
-            return Err(BertError::ExtraData(self.pos));
+        return Ok(terms);
+    }
+
+    pub fn parse_disk_log(&mut self) -> Result<Vec<BertTerm>> {
+        self.disk_log_magic()?;
+        self.disk_log_opened_status()?;
+
+        let mut terms = Vec::with_capacity(32);
+        while !self.eof() {
+            let t = self.disk_log_term()?;
+            terms.push(t);
         }
+        return Ok(terms);
     }
 
     // Parsers
@@ -52,9 +59,46 @@ impl Parser {
         let magic = self.eat_u8()?;
         if magic != BERT_MAGIC_NUMBER {
             return Err(BertError::InvalidMagicNumber(offset));
-        } else {
-            return Ok(());
         }
+        return Ok(());
+    }
+
+    fn disk_log_magic(&mut self) -> Result<()> {
+        let offset = self.pos;
+        let magic = self.eat_u32_be()?;
+        if magic != DISK_LOG_MAGIC {
+            return Err(BertError::InvalidMagicNumber(offset));
+        }
+        return Ok(());
+    }
+
+    fn disk_log_opened_status(&mut self) -> Result<()> {
+        let offset = self.pos;
+        let status = self.eat_u32_be()?;
+        if status != DISK_LOG_OPENED && status != DISK_LOG_CLOSED {
+            return Err(BertError::InvalidDiskLogOpenedStatus(offset));
+        }
+        return Ok(());
+    }
+
+    fn disk_log_term(&mut self) -> Result<BertTerm> {
+        // XXX(vfoley): should we check that the correct length was read?
+        let _len_offset = self.pos;
+        let _len = self.eat_u32_be()?;
+
+        let magic_offset = self.pos;
+        let magic = self.eat_u32_be()?;
+        if magic != DISK_LOG_TERM_MAGIC {
+            return Err(BertError::InvalidMagicNumber(magic_offset));
+        }
+
+        let magic_offset = self.pos;
+        let magic = self.eat_u8()?;
+        if magic != BERT_MAGIC_NUMBER {
+            return Err(BertError::InvalidMagicNumber(magic_offset));
+        }
+
+        return self.bert_term();
     }
 
     fn bert_term(&mut self) -> Result<BertTerm> {
