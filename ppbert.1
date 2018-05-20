@@ -10,13 +10,27 @@
 .Op Ar FILES Nm ...
 .Sh DESCRIPTION
 .Nm
-parses and pretty prints a ETF-encoded file.
-The files can either be passed on the command-line
-piped through stdin.
+decodes binary-encoded Erlang terms (often called BERT terms) and pretty-prints them.
+.Pp
+.Nm
+can decode .bert files (bertconf), .bert2 files (rig), and log files (disk_log).
+The output format can either be pretty-printed as Erlang terms
+(good for looking at the structure of a file),
+or as one-line JSON values (useful for grepping or piping into jq).
+.Pp
+.Nm
+was created to make pretty-printing such files faster than what
+is possible in Erlang, and its design follows the Unix philosophy
+as much as possible (e.g., reading from
+.Em
+stdin
+and writing to
+.Em
+stdout.)
 .Pp
 .Nm
 accepts the following options:
-.Bl -tag -width Ds
+.Bl -tag -width left
 .It Fl 2 , Fl -bert2
 Parse a .bert2 file
 .It Fl d , Fl -disk-log
@@ -88,12 +102,29 @@ Lists (tags: 106, 108);
 Maps (tag: 116).
 .El
 .Sh EXAMPLES
-Pretty print the file foo.bert.
+Pretty print the file foo.bert:
 .Bd -literal -offset indent
 $ ppbert foo.bert
 .Ed
 .Pp
-Pretty print from stdin
+Pretty print as JSON the all the .bert2 files in the current directory:
 .Bd -literal -offset indent
-$ printf "\ex83\ex77\ex04atom" | ppbert
+$ ppbert -2 --json *.bert2
 .Ed
+.Pp
+Pretty print the disk_log files in the current directory:
+.Bd -literal -offset indent
+$ ppbert -d *.LOG.[0-9]*
+.Ed
+.Pp
+Pretty print from stdin:
+.Bd -literal -offset indent
+$ cat foo.bert | ppbert -
+OR
+$ cat foo.bert | ppbert
+.Ed
+.Sh LICENSE
+.Nm
+MIT-licensed; see LICENSE for the terms of use.
+.Sh AUTHORS
+Vincent Foley <http://github.com/gnuvince>
