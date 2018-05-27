@@ -197,7 +197,7 @@ impl Parser {
         let mut bytes: Vec<u8> = Vec::with_capacity(len);
         unsafe { bytes.set_len(len); }
         for (i, byte) in bytes.iter_mut().enumerate() {
-            *byte = self.peek_u8_unchecked(i);
+            *byte = self.peek_offset(i);
             is_ascii = is_ascii && (*byte < 128);
         }
 
@@ -233,7 +233,7 @@ impl Parser {
         let mut buf = Vec::with_capacity(len);
         unsafe { buf.set_len(len); }
         for (i, byte) in buf.iter_mut().enumerate() {
-            *byte = self.peek_u8_unchecked(i);
+            *byte = self.peek_offset(i);
         }
         self.pos += len;
         String::from_utf8(buf)
@@ -262,7 +262,7 @@ impl Parser {
         let mut bytes = Vec::with_capacity(len);
         unsafe { bytes.set_len(len); }
         for (i, byte) in bytes.iter_mut().enumerate() {
-            *byte = self.peek_u8_unchecked(i);
+            *byte = self.peek_offset(i);
         }
 
         self.pos += len;
@@ -282,7 +282,7 @@ impl Parser {
         let mut bytes = Vec::with_capacity(len);
         unsafe { bytes.set_len(len); }
         for (i, byte) in bytes.iter_mut().enumerate() {
-            *byte = self.peek_u8_unchecked(i);
+            *byte = self.peek_offset(i);
         }
 
         self.pos += len;
@@ -344,7 +344,7 @@ impl Parser {
                 available: 0
             });
         } else {
-            return Ok(self.peek_u8_unchecked(0));
+            return Ok(self.peek_offset(0));
         }
     }
 
@@ -352,8 +352,8 @@ impl Parser {
         (self.pos + n) <= self.contents.len()
     }
 
-    fn peek_u8_unchecked(&self, offset: usize) -> u8 {
-        unsafe { *self.contents.get_unchecked(self.pos + offset) }
+    fn peek_offset(&self, offset: usize) -> u8 {
+        self.contents[self.pos + offset]
     }
 
     fn eat_u8(&mut self) -> Result<u8> {
@@ -364,7 +364,7 @@ impl Parser {
                 available: self.contents.len() - self.pos
             });
         }
-        let b = self.peek_u8_unchecked(0);
+        let b = self.peek_offset(0);
         self.pos += 1;
         return Ok(b);
     }
@@ -382,8 +382,8 @@ impl Parser {
                 available: self.contents.len() - self.pos
             });
         }
-        let b0 = self.peek_u8_unchecked(0) as u16;
-        let b1 = self.peek_u8_unchecked(1) as u16;
+        let b0 = self.peek_offset(0) as u16;
+        let b1 = self.peek_offset(1) as u16;
         self.pos += 2;
         return Ok((b0 << 8) + b1)
     }
@@ -396,10 +396,10 @@ impl Parser {
                 available: self.contents.len() - self.pos
             });
         }
-        let b0 = self.peek_u8_unchecked(0) as i32;
-        let b1 = self.peek_u8_unchecked(1) as i32;
-        let b2 = self.peek_u8_unchecked(2) as i32;
-        let b3 = self.peek_u8_unchecked(3) as i32;
+        let b0 = self.peek_offset(0) as i32;
+        let b1 = self.peek_offset(1) as i32;
+        let b2 = self.peek_offset(2) as i32;
+        let b3 = self.peek_offset(3) as i32;
         self.pos += 4;
         return Ok((b0 << 24) + (b1 << 16) + (b2 << 8) + b3)
     }
@@ -412,10 +412,10 @@ impl Parser {
                 available: self.contents.len() - self.pos
             });
         }
-        let b0 = self.peek_u8_unchecked(0) as u32;
-        let b1 = self.peek_u8_unchecked(1) as u32;
-        let b2 = self.peek_u8_unchecked(2) as u32;
-        let b3 = self.peek_u8_unchecked(3) as u32;
+        let b0 = self.peek_offset(0) as u32;
+        let b1 = self.peek_offset(1) as u32;
+        let b2 = self.peek_offset(2) as u32;
+        let b3 = self.peek_offset(3) as u32;
         self.pos += 4;
         return Ok((b0 << 24) + (b1 << 16) + (b2 << 8) + b3)
     }
@@ -428,14 +428,14 @@ impl Parser {
                 available: self.contents.len() - self.pos
             });
         }
-        let b0 = self.peek_u8_unchecked(0) as u64;
-        let b1 = self.peek_u8_unchecked(1) as u64;
-        let b2 = self.peek_u8_unchecked(2) as u64;
-        let b3 = self.peek_u8_unchecked(3) as u64;
-        let b4 = self.peek_u8_unchecked(4) as u64;
-        let b5 = self.peek_u8_unchecked(5) as u64;
-        let b6 = self.peek_u8_unchecked(6) as u64;
-        let b7 = self.peek_u8_unchecked(7) as u64;
+        let b0 = self.peek_offset(0) as u64;
+        let b1 = self.peek_offset(1) as u64;
+        let b2 = self.peek_offset(2) as u64;
+        let b3 = self.peek_offset(3) as u64;
+        let b4 = self.peek_offset(4) as u64;
+        let b5 = self.peek_offset(5) as u64;
+        let b6 = self.peek_offset(6) as u64;
+        let b7 = self.peek_offset(7) as u64;
         self.pos += 8;
         return Ok((b0 << 56) + (b1 << 48) + (b2 << 40) + (b3 << 32) +
                   (b4 << 24) + (b5 << 16) + (b6 << 8) + b7);
