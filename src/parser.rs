@@ -184,24 +184,9 @@ impl Parser {
     }
 
     fn atom(&mut self, len: usize) -> Result<BertTerm> {
-        if !self.can_read(len) {
-            return Err(BertError::NotEnoughData {
-                offset: self.pos,
-                needed: len,
-                available: self.contents.len() - self.pos
-            })
-        }
-
-        let offset = self.pos;
-        let mut is_ascii = true;
-        let mut bytes: Vec<u8> = Vec::with_capacity(len);
-        unsafe { bytes.set_len(len); }
-        for (i, byte) in bytes.iter_mut().enumerate() {
-            *byte = self.peek_offset(i);
-            is_ascii = is_ascii && (*byte < 128);
-        }
-
-        self.pos += len;
+        let initial_pos = self.pos;
+        let bytes: Vec<u8> = self.eat_slice(len)?.to_owned();
+        let is_ascii = bytes.iter().all(|byte| *byte < 128);
 
         // Optimization: ASCII atoms represent the overwhelming
         // majority of use cases of atoms. When we read the bytes
@@ -216,29 +201,16 @@ impl Parser {
         } else {
             ISO_8859_1.decode(&bytes, DecoderTrap::Strict)
                 .map(|s| BertTerm::Atom(s))
-                .map_err(|_| BertError::InvalidLatin1Atom(offset))
+                .map_err(|_| BertError::InvalidLatin1Atom(initial_pos))
         }
     }
 
     fn atom_utf8(&mut self, len: usize) -> Result<BertTerm> {
-        if !self.can_read(len) {
-            return Err(BertError::NotEnoughData {
-                offset: self.pos,
-                needed: len,
-                available: self.contents.len() - self.pos
-            })
-        }
-
-        let offset = self.pos;
-        let mut buf = Vec::with_capacity(len);
-        unsafe { buf.set_len(len); }
-        for (i, byte) in buf.iter_mut().enumerate() {
-            *byte = self.peek_offset(i);
-        }
-        self.pos += len;
+        let initial_pos = self.pos;
+        let buf: Vec<u8> = self.eat_slice(len)?.to_owned();
         String::from_utf8(buf)
             .map(|s| BertTerm::Atom(s))
-            .map_err(|_| BertError::InvalidUTF8Atom(offset))
+            .map_err(|_| BertError::InvalidUTF8Atom(initial_pos))
     }
 
     fn tuple(&mut self, len: usize) -> Result<BertTerm> {
@@ -251,41 +223,13 @@ impl Parser {
 
     fn string(&mut self) -> Result<BertTerm> {
         let len = self.eat_u16_be()? as usize;
-        if !self.can_read(len) {
-            return Err(BertError::NotEnoughData {
-                offset: self.pos,
-                needed: len,
-                available: self.contents.len() - self.pos
-            })
-        }
-
-        let mut bytes = Vec::with_capacity(len);
-        unsafe { bytes.set_len(len); }
-        for (i, byte) in bytes.iter_mut().enumerate() {
-            *byte = self.peek_offset(i);
-        }
-
-        self.pos += len;
+        let bytes: Vec<u8> = self.eat_slice(len)?.to_owned();
         Ok(BertTerm::String(bytes))
     }
 
     fn binary(&mut self) -> Result<BertTerm> {
         let len = self.eat_u32_be()? as usize;
-        if !self.can_read(len) {
-            return Err(BertError::NotEnoughData {
-                offset: self.pos,
-                needed: len,
-                available: self.contents.len() - self.pos
-            })
-        }
-
-        let mut bytes = Vec::with_capacity(len);
-        unsafe { bytes.set_len(len); }
-        for (i, byte) in bytes.iter_mut().enumerate() {
-            *byte = self.peek_offset(i);
-        }
-
-        self.pos += len;
+        let bytes: Vec<u8> = self.eat_slice(len)?.to_owned();
         Ok(BertTerm::Binary(bytes))
     }
 
@@ -344,7 +288,7 @@ impl Parser {
                 available: 0
             });
         } else {
-            return Ok(self.peek_offset(0));
+            return Ok(self.contents[self.pos]);
         }
     }
 
@@ -352,19 +296,21 @@ impl Parser {
         (self.pos + n) <= self.contents.len()
     }
 
-    fn peek_offset(&self, offset: usize) -> u8 {
-        self.contents[self.pos + offset]
+    fn eat_slice(&mut self, len: usize) -> Result<&[u8]> {
+        if !self.can_read(len) {
+            return Err(BertError::NotEnoughData {
+                offset: self.pos,
+                needed: len,
+                available: self.contents.len() - self.pos
+            })
+        }
+        let slice = &self.contents[self.pos .. self.pos + len];
+        self.pos += len;
+        return Ok(slice);
     }
 
     fn eat_u8(&mut self) -> Result<u8> {
-        if !self.can_read(1) {
-            return Err(BertError::NotEnoughData {
-                offset: self.pos,
-                needed: 1,
-                available: self.contents.len() - self.pos
-            });
-        }
-        let b = self.peek_offset(0);
+        let b = self.peek()?;
         self.pos += 1;
         return Ok(b);
     }
@@ -375,68 +321,40 @@ impl Parser {
     }
 
     fn eat_u16_be(&mut self) -> Result<u16> {
-        if !self.can_read(2) {
-            return Err(BertError::NotEnoughData {
-                offset: self.pos,
-                needed: 2,
-                available: self.contents.len() - self.pos
-            });
-        }
-        let b0 = self.peek_offset(0) as u16;
-        let b1 = self.peek_offset(1) as u16;
-        self.pos += 2;
+        let bytes = self.eat_slice(2)?;
+        let b0 = bytes[0] as u16;
+        let b1 = bytes[1] as u16;
         return Ok((b0 << 8) + b1)
     }
 
     fn eat_i32_be(&mut self) -> Result<i32> {
-        if !self.can_read(4) {
-            return Err(BertError::NotEnoughData {
-                offset: self.pos,
-                needed: 4,
-                available: self.contents.len() - self.pos
-            });
-        }
-        let b0 = self.peek_offset(0) as i32;
-        let b1 = self.peek_offset(1) as i32;
-        let b2 = self.peek_offset(2) as i32;
-        let b3 = self.peek_offset(3) as i32;
-        self.pos += 4;
+        let bytes = self.eat_slice(4)?;
+        let b0 = bytes[0] as i32;
+        let b1 = bytes[1] as i32;
+        let b2 = bytes[2] as i32;
+        let b3 = bytes[3] as i32;
         return Ok((b0 << 24) + (b1 << 16) + (b2 << 8) + b3)
     }
 
     fn eat_u32_be(&mut self) -> Result<u32> {
-        if !self.can_read(4) {
-            return Err(BertError::NotEnoughData {
-                offset: self.pos,
-                needed: 4,
-                available: self.contents.len() - self.pos
-            });
-        }
-        let b0 = self.peek_offset(0) as u32;
-        let b1 = self.peek_offset(1) as u32;
-        let b2 = self.peek_offset(2) as u32;
-        let b3 = self.peek_offset(3) as u32;
-        self.pos += 4;
+        let bytes = self.eat_slice(4)?;
+        let b0 = bytes[0] as u32;
+        let b1 = bytes[1] as u32;
+        let b2 = bytes[2] as u32;
+        let b3 = bytes[3] as u32;
         return Ok((b0 << 24) + (b1 << 16) + (b2 << 8) + b3)
     }
 
     fn eat_u64_be(&mut self) -> Result<u64> {
-        if !self.can_read(8) {
-            return Err(BertError::NotEnoughData {
-                offset: self.pos,
-                needed: 8,
-                available: self.contents.len() - self.pos
-            });
-        }
-        let b0 = self.peek_offset(0) as u64;
-        let b1 = self.peek_offset(1) as u64;
-        let b2 = self.peek_offset(2) as u64;
-        let b3 = self.peek_offset(3) as u64;
-        let b4 = self.peek_offset(4) as u64;
-        let b5 = self.peek_offset(5) as u64;
-        let b6 = self.peek_offset(6) as u64;
-        let b7 = self.peek_offset(7) as u64;
-        self.pos += 8;
+        let bytes = self.eat_slice(8)?;
+        let b0 = bytes[0] as u64;
+        let b1 = bytes[1] as u64;
+        let b2 = bytes[2] as u64;
+        let b3 = bytes[3] as u64;
+        let b4 = bytes[4] as u64;
+        let b5 = bytes[5] as u64;
+        let b6 = bytes[6] as u64;
+        let b7 = bytes[7] as u64;
         return Ok((b0 << 56) + (b1 << 48) + (b2 << 40) + (b3 << 32) +
                   (b4 << 24) + (b5 << 16) + (b6 << 8) + b7);
     }
