@@ -55,28 +55,28 @@ impl Parser {
 
     // Parsers
     fn magic_number(&mut self) -> Result<()> {
-        let offset = self.pos;
+        let initial_pos = self.pos;
         let magic = self.eat_u8()?;
         if magic != BERT_MAGIC_NUMBER {
-            return Err(BertError::InvalidMagicNumber(offset));
+            return Err(BertError::InvalidMagicNumber(initial_pos));
         }
         return Ok(());
     }
 
     fn disk_log_magic(&mut self) -> Result<()> {
-        let offset = self.pos;
+        let initial_pos = self.pos;
         let magic = self.eat_u32_be()?;
         if magic != DISK_LOG_MAGIC {
-            return Err(BertError::InvalidMagicNumber(offset));
+            return Err(BertError::InvalidMagicNumber(initial_pos));
         }
         return Ok(());
     }
 
     fn disk_log_opened_status(&mut self) -> Result<()> {
-        let offset = self.pos;
+        let initial_pos = self.pos;
         let status = self.eat_u32_be()?;
         if status != DISK_LOG_OPENED && status != DISK_LOG_CLOSED {
-            return Err(BertError::InvalidDiskLogOpenedStatus(offset));
+            return Err(BertError::InvalidDiskLogOpenedStatus(initial_pos));
         }
         return Ok(());
     }
@@ -86,23 +86,23 @@ impl Parser {
         let _len_offset = self.pos;
         let _len = self.eat_u32_be()?;
 
-        let magic_offset = self.pos;
+        let magic_pos = self.pos;
         let magic = self.eat_u32_be()?;
         if magic != DISK_LOG_TERM_MAGIC {
-            return Err(BertError::InvalidMagicNumber(magic_offset));
+            return Err(BertError::InvalidMagicNumber(magic_pos));
         }
 
-        let magic_offset = self.pos;
+        let magic_pos = self.pos;
         let magic = self.eat_u8()?;
         if magic != BERT_MAGIC_NUMBER {
-            return Err(BertError::InvalidMagicNumber(magic_offset));
+            return Err(BertError::InvalidMagicNumber(magic_pos));
         }
 
         return self.bert_term();
     }
 
     fn bert_term(&mut self) -> Result<BertTerm> {
-        let offset = self.pos;
+        let initial_pos = self.pos;
         match self.eat_u8()? {
             SMALL_INTEGER_EXT => { self.small_integer() }
             INTEGER_EXT => { self.integer() }
@@ -147,7 +147,7 @@ impl Parser {
             MAP_EXT => {
                 self.map()
             }
-            tag => { Err(BertError::InvalidTag(offset, tag)) }
+            tag => { Err(BertError::InvalidTag(initial_pos, tag)) }
         }
     }
 
@@ -162,7 +162,7 @@ impl Parser {
     }
 
     fn old_float(&mut self) -> Result<BertTerm> {
-        let offset = self.pos;
+        let initial_pos = self.pos;
         let mut s = String::new();
         while !self.eof() && self.peek()? != 0 {
             s.push(self.eat_char()?);
@@ -173,7 +173,7 @@ impl Parser {
         }
 
         s.parse::<f64>()
-            .map_err(|_| BertError::InvalidFloat(offset))
+            .map_err(|_| BertError::InvalidFloat(initial_pos))
             .map(|f| BertTerm::Float(f))
     }
 
