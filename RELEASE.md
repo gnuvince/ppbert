@@ -1,3 +1,15 @@
+0.6.1
+=====
+
+Performance improvement
+-----------------------
+
+- A number of unsafe function usages (e.g., `Vec::set_len()`) have
+  been removed and replaced with safer alternatives.  It turns out
+  that it gives a slight increase in the performance of parsing.
+  Win-win!
+
+
 0.6.0
 =====
 
