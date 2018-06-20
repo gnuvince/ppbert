@@ -1,5 +1,7 @@
 use std::mem;
 
+use byteorder::{ReadBytesExt, BigEndian};
+
 use num::bigint::{self, ToBigInt};
 use num::traits::{Zero, One};
 
@@ -321,42 +323,27 @@ impl Parser {
     }
 
     fn eat_u16_be(&mut self) -> Result<u16> {
-        let bytes = self.eat_slice(2)?;
-        let b0 = bytes[0] as u16;
-        let b1 = bytes[1] as u16;
-        return Ok((b0 << 8) + b1)
+        let mut bytes = self.eat_slice(2)?;
+        let n = bytes.read_u16::<BigEndian>()?;
+        return Ok(n);
     }
 
     fn eat_i32_be(&mut self) -> Result<i32> {
-        let bytes = self.eat_slice(4)?;
-        let b0 = bytes[0] as i32;
-        let b1 = bytes[1] as i32;
-        let b2 = bytes[2] as i32;
-        let b3 = bytes[3] as i32;
-        return Ok((b0 << 24) + (b1 << 16) + (b2 << 8) + b3)
+        let mut bytes = self.eat_slice(4)?;
+        let n = bytes.read_i32::<BigEndian>()?;
+        return Ok(n);
     }
 
     fn eat_u32_be(&mut self) -> Result<u32> {
-        let bytes = self.eat_slice(4)?;
-        let b0 = bytes[0] as u32;
-        let b1 = bytes[1] as u32;
-        let b2 = bytes[2] as u32;
-        let b3 = bytes[3] as u32;
-        return Ok((b0 << 24) + (b1 << 16) + (b2 << 8) + b3)
+        let mut bytes = self.eat_slice(4)?;
+        let n = bytes.read_u32::<BigEndian>()?;
+        return Ok(n);
     }
 
     fn eat_u64_be(&mut self) -> Result<u64> {
-        let bytes = self.eat_slice(8)?;
-        let b0 = bytes[0] as u64;
-        let b1 = bytes[1] as u64;
-        let b2 = bytes[2] as u64;
-        let b3 = bytes[3] as u64;
-        let b4 = bytes[4] as u64;
-        let b5 = bytes[5] as u64;
-        let b6 = bytes[6] as u64;
-        let b7 = bytes[7] as u64;
-        return Ok((b0 << 56) + (b1 << 48) + (b2 << 40) + (b3 << 32) +
-                  (b4 << 24) + (b5 << 16) + (b6 << 8) + b7);
+        let mut bytes = self.eat_slice(8)?;
+        let n = bytes.read_u64::<BigEndian>()?;
+        return Ok(n);
     }
 
     // https://developers.google.com/protocol-buffers/docs/encoding#varints

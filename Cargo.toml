@@ -10,6 +10,7 @@ authors = ["Vincent Foley <vfoley@gmail.com>"]
 num = "0.1"
 encoding = "0.2"
 rayon = "1.0"
+byteorder = "1.2"
 
 [[bin]]
 name = "ppbert"
