@@ -348,30 +348,24 @@ impl Parser {
 
     // https://developers.google.com/protocol-buffers/docs/encoding#varints
     fn parse_varint(&mut self) -> Result<u64> {
+        const MAX_LEN: u64 = 8;
         let start_pos = self.pos;
+        let mut i: u64 = 0;
+        let mut val: u64 = 0;
 
-        let mut bytes = Vec::with_capacity(mem::size_of::<u64>());
-        let mut i = 0;
-
-        while !self.eof() && i < bytes.capacity() {
+        while !self.eof() && i < MAX_LEN {
             let b = self.eat_u8()?;
-            bytes.push(b);
+            val = val | ((b as u64 & 0x7f) << (7*i));
             if b & 0x80 == 0 {
                 break;
             }
             i += 1;
         }
 
-        if i >= bytes.capacity() {
+        if i >= MAX_LEN {
             return Err(BertError::VarintTooLarge(start_pos));
         }
-
-        let mut x: u64 = 0;
-        for (i, byte) in bytes.iter().rev().enumerate() {
-            x = (x << (7*i) as u64) | (*byte as u64 & 0x7f);
-        }
-
-        return Ok(x);
+        return Ok(val);
     }
 }
 
