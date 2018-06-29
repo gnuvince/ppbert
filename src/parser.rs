@@ -1,5 +1,3 @@
-use std::mem;
-
 use byteorder::{ReadBytesExt, BigEndian};
 
 use num::bigint::{self, ToBigInt};
