@@ -65,15 +65,6 @@ impl BertTerm {
     }
 }
 
-impl fmt::Display for BertTerm {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let pp = PrettyPrinter::new(self,
-                                    DEFAULT_INDENT_WIDTH,
-                                    DEFAULT_MAX_TERMS_PER_LINE);
-        write!(f, "{}", pp)
-    }
-}
-
 
 /// Outputs a vector of BertTerms to stdout.
 pub fn pp_bert(terms: Vec<BertTerm>, indent_width: usize, terms_per_line: usize) {
@@ -323,7 +314,11 @@ impl BertTerm {
                 f.write_char(':')?;
                 kv[1].write_json(f, transform_proplists)
             }
-            _ => panic!("{} is not a proplist item", self)
+            _ => {
+                let pp = PrettyPrinter::new(
+                    self, DEFAULT_INDENT_WIDTH, DEFAULT_MAX_TERMS_PER_LINE);
+                panic!("{} is not a proplist item", pp)
+            }
         }
     }
 
