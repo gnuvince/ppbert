@@ -1,3 +1,5 @@
+extern crate itoa;
+
 use std::fmt::{self, Write as FmtWrite};
 use std::io::{self, Write as IoWrite};
 use std::iter;
@@ -127,7 +129,7 @@ impl <'a> PrettyPrinter<'a> {
     fn write_term(&self, term: &BertTerm, f: &mut fmt::Formatter, depth: usize) -> fmt::Result {
         match *term {
             BertTerm::Nil => f.write_str("[]"),
-            BertTerm::Int(n) => write!(f, "{}", n),
+            BertTerm::Int(n) => itoa::fmt(f, n),
             BertTerm::BigInt(ref n) => write!(f, "{}", n),
             BertTerm::Float(x) => write!(f, "{}", x),
             BertTerm::Atom(ref s) => f.write_str(s),
