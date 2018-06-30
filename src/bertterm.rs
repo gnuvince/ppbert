@@ -44,26 +44,26 @@ impl BertTerm {
 
     fn is_proplist(&self) -> bool {
         match *self {
-            BertTerm::List(ref elems) => elems.iter().all(|e| e.is_proplist_entry()),
+            BertTerm::List(ref elems) =>
+                elems.iter().all(|e| e.is_proplist_entry()),
             _ => false
         }
     }
 
     fn is_proplist_entry(&self) -> bool {
         match *self {
-            BertTerm::Tuple(ref elems) =>
-                elems.len() == 2 && elems[0].is_proplist_key(),
+            BertTerm::Tuple(ref elems) => is_proplist_tuple(elems),
             _ => false
         }
     }
+}
 
-    fn is_proplist_key(&self) -> bool {
-        match *self {
-            BertTerm::Atom(_) => true,
-            BertTerm::String(_) => true,
-            BertTerm::Binary(_) => true,
-            _ => false
-        }
+fn is_proplist_tuple(elems: &[BertTerm]) -> bool {
+    match elems {
+        [BertTerm::Atom(_), _] => true,
+        [BertTerm::String(_), _] => true,
+        [BertTerm::Binary(_), _] => true,
+        _ => false
     }
 }
 
