@@ -1,8 +1,7 @@
 extern crate ppbert;
-extern crate num;
+extern crate num_bigint as bigint;
 
-use num::bigint;
-use num::bigint::ToBigInt;
+use bigint::ToBigInt;
 
 use ppbert::parser;
 use ppbert::bertterm::BertTerm;
