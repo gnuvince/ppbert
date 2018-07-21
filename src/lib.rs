@@ -1,5 +1,5 @@
 extern crate byteorder;
-extern crate num;
+extern crate num_bigint;
 extern crate encoding;
 
 pub mod error;

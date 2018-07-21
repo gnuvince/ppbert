@@ -1,7 +1,6 @@
-use byteorder::{ReadBytesExt, BigEndian};
+use num_bigint::{BigInt, ToBigInt};
 
-use num::bigint::{self, ToBigInt};
-use num::traits::{Zero, One};
+use byteorder::{ReadBytesExt, BigEndian};
 
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_1;
@@ -249,8 +248,8 @@ impl Parser {
 
     fn bigint(&mut self, len: usize) -> Result<BertTerm> {
         let sign = self.eat_u8()?;
-        let mut sum: bigint::BigInt = Zero::zero();
-        let mut pos: bigint::BigInt = One::one();
+        let mut sum: BigInt = (0_i32).to_bigint().expect("cannot convert 0 to bigint");
+        let mut pos: BigInt = (1_i32).to_bigint().expect("cannot convert 1 to bigint");
         for _ in 0 .. len {
             let d = self.eat_u8()?;
             let t = &pos * &(d.to_bigint().unwrap());

@@ -4,7 +4,7 @@ use std::fmt::{self, Write as FmtWrite};
 use std::io::{self, Write as IoWrite};
 use std::iter;
 
-use num::bigint;
+use num_bigint::{BigInt, Sign};
 
 use consts::*;
 
@@ -16,7 +16,7 @@ pub const DEFAULT_MAX_TERMS_PER_LINE: usize = 4;
 pub enum BertTerm {
     Nil,
     Int(i32),
-    BigInt(bigint::BigInt),
+    BigInt(BigInt),
     Float(f64),
     Atom(String),
     Tuple(Vec<BertTerm>),
@@ -382,7 +382,7 @@ impl BertTerm {
                     out.push( ((len >> 8) & 0xff) as u8 );
                     out.push( (len & 0xff) as u8 );
                 }
-                if sign == bigint::Sign::Minus {
+                if sign == Sign::Minus {
                     out.push(1);
                 } else {
                     out.push(0);
