@@ -8,10 +8,6 @@ use num_bigint::{BigInt, Sign};
 
 use consts::*;
 
-pub const DEFAULT_INDENT_WIDTH: usize = 2;
-pub const DEFAULT_MAX_TERMS_PER_LINE: usize = 4;
-
-
 #[derive(Debug, PartialEq)]
 pub enum BertTerm {
     Nil,
@@ -317,9 +313,7 @@ impl BertTerm {
                 kv[1].write_json(f, transform_proplists)
             }
             _ => {
-                let pp = PrettyPrinter::new(
-                    self, DEFAULT_INDENT_WIDTH, DEFAULT_MAX_TERMS_PER_LINE);
-                panic!("{} is not a proplist item", pp)
+                panic!("{:?} is not a proplist item", self)
             }
         }
     }

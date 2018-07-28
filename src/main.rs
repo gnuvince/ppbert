@@ -8,15 +8,13 @@ use std::time::Instant;
 
 use clap::{Arg, App};
 
-use ppbert::bertterm::{
-    self,
-    BertTerm,
-    DEFAULT_INDENT_WIDTH,
-    DEFAULT_MAX_TERMS_PER_LINE
-};
+use ppbert::bertterm::{self, BertTerm};
 use ppbert::error::Result;
 use ppbert::parser;
 
+
+const DEFAULT_INDENT_WIDTH: &str = "2";
+const DEFAULT_MAX_TERMS_PER_LINE: &str = "5";
 const PROG_NAME: &str = "ppbert";
 
 fn main() {
@@ -32,12 +30,14 @@ fn main() {
              .value_name("num")
              .short("i")
              .long("indent-width")
+             .default_value(DEFAULT_INDENT_WIDTH)
              .takes_value(true))
         .arg(Arg::with_name("max_per_line")
              .help("Prints at most <num> basic terms per line")
              .value_name("num")
              .short("m")
              .long("max-terms-per-line")
+             .default_value(DEFAULT_MAX_TERMS_PER_LINE)
              .takes_value(true))
         .arg(Arg::with_name("verbose")
              .help("Enables verbose mode")
@@ -70,15 +70,12 @@ fn main() {
         Some(files) => files.collect(),
         None => vec!["-"]
     };
-
-    let indent_level = value_t!(matches, "indent_width", usize)
-        .unwrap_or(DEFAULT_INDENT_WIDTH);
-    let max_per_line = value_t!(matches, "max_per_line", usize)
-        .unwrap_or(DEFAULT_MAX_TERMS_PER_LINE);
+    let indent_level = value_t!(matches, "indent_width", usize).unwrap();
+    let max_per_line = value_t!(matches, "max_per_line", usize).unwrap();
     let verbose = matches.is_present("verbose");
     let parse_only = matches.is_present("parse");
-
     let transform_proplists = matches.is_present("transform-proplists");
+
     let parse_fn =
         if matches.is_present("bert2") {
             parse_bert2
