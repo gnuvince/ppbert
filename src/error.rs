@@ -19,6 +19,9 @@ pub enum BertError {
     NotEnoughData { offset: usize, needed: usize, available: usize },
     InvalidDiskLogOpenedStatus(usize),
 
+    // Erlang parsing errors
+    Erlang(String, u32, u32, String),
+
     // conversion errors
     NotABertFile,
 }
@@ -85,6 +88,7 @@ impl Error for BertError {
             NotEnoughData { .. } => "no enough data available",
             NotABertFile => "not a valid .bert file",
             InvalidDiskLogOpenedStatus(_) => "invalid file opened status",
+            Erlang(_, _, _, _) => "erlang error"
         }
     }
 }
