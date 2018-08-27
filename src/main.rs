@@ -1,8 +1,8 @@
 extern crate ppbert;
 #[macro_use] extern crate clap;
 
-use std::io::{self, BufReader, Read};
-use std::fs::File;
+use std::io::{self, Read};
+use std::fs;
 use std::process::exit;
 use std::time::Instant;
 
@@ -127,17 +127,16 @@ fn handle_file<T>(
 ) -> Result<()> {
 
     // Read file or stdin into buffer
-    let mut buf: Vec<u8> = Vec::new();
     let now = Instant::now();
-    if file == "-" {
+    let buf = if file == "-" {
         let stdin = io::stdin();
         let mut stdin = stdin.lock();
+        let mut buf: Vec<u8> = Vec::with_capacity(4096);
         stdin.read_to_end(&mut buf)?;
+        buf
     } else {
-        let f = File::open(file)?;
-        let mut rdr = BufReader::new(f);
-        rdr.read_to_end(&mut buf)?;
-    }
+        fs::read(file)?
+    };
     let dur = now.elapsed();
     if verbose {
         eprintln!("{}: read time: {}.{:09}",
