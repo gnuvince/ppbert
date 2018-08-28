@@ -1,7 +1,6 @@
 extern crate itoa;
 
 use std::fmt::{self, Write as FmtWrite};
-use std::io::{self, Write as IoWrite};
 use std::iter;
 
 use num_bigint::{BigInt, Sign};
@@ -63,40 +62,6 @@ fn is_proplist_tuple(elems: &[BertTerm]) -> bool {
     }
 }
 
-
-/// Outputs a vector of BertTerms to stdout.
-pub fn pp_bert(terms: Vec<BertTerm>, indent_width: usize, terms_per_line: usize) {
-    let stdout = io::stdout();
-    let mut stdout = stdout.lock();
-    for t in terms {
-        let pp = PrettyPrinter::new(&t, indent_width, terms_per_line);
-        let _ = writeln!(stdout, "{}", pp);
-    }
-}
-
-/// Outputs a BertTerm as JSON to stdout.
-pub fn pp_json(terms: Vec<BertTerm>, _: usize, _: usize) {
-    let stdout = io::stdout();
-    let mut stdout = stdout.lock();
-    for t in terms {
-        let pp = JsonPrettyPrinter { term: &t, transform_proplists: false };
-        let _ = writeln!(stdout, "{}", pp);
-    }
-}
-
-
-/// Outputs a BertTerm as JSON to stdout;
-/// Erlang proplists are converted to JSON objects.
-pub fn pp_json_proplist(terms: Vec<BertTerm>, _: usize, _: usize) {
-    let stdout = io::stdout();
-    let mut stdout = stdout.lock();
-    for t in terms {
-        let pp = JsonPrettyPrinter { term: &t, transform_proplists: true };
-        let _ = writeln!(stdout, "{}", pp);
-    }
-}
-
-
 pub struct PrettyPrinter<'a> {
     term: &'a BertTerm,
     indent_width: usize,
@@ -108,7 +73,6 @@ impl <'a> fmt::Display for PrettyPrinter<'a> {
         self.write_term(self.term, f, 0)
     }
 }
-
 
 impl <'a> PrettyPrinter<'a> {
     /// Creates a pretty printer for `term` where sub-terms
@@ -243,6 +207,11 @@ pub struct JsonPrettyPrinter<'a> {
     transform_proplists: bool
 }
 
+impl <'a> JsonPrettyPrinter<'a> {
+    pub fn new(term: &'a BertTerm, transform_proplists: bool) -> Self {
+        JsonPrettyPrinter { term, transform_proplists }
+    }
+}
 
 impl <'a> fmt::Display for JsonPrettyPrinter<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

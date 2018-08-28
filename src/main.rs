@@ -1,7 +1,7 @@
 extern crate ppbert;
 #[macro_use] extern crate clap;
 
-use std::io::{self, Read};
+use std::io::{self, Read, Write};
 use std::fs;
 use std::process::exit;
 use std::time::Instant;
@@ -87,16 +87,16 @@ fn main() {
     let output_fn =
         if matches.is_present("json") {
             if transform_proplists {
-                bertterm::pp_json_proplist
+                pp_json_proplist
             } else {
-                bertterm::pp_json
+                pp_json
             }
         } else {
             if transform_proplists {
                 eprintln!("{}: warning: --transform-proplists is only valid with the --json flag",
                           PROG_NAME);
             }
-            bertterm::pp_bert
+            pp_bert
         };
 
     let mut return_code = 0;
@@ -186,4 +186,35 @@ fn parse_bert2(buf: Vec<u8>) -> Result<Vec<BertTerm>> {
 fn parse_disk_log(buf: Vec<u8>) -> Result<Vec<BertTerm>> {
     let mut parser = parser::Parser::new(buf);
     return parser.parse_disk_log();
+}
+
+/// Outputs a vector of BertTerms to stdout.
+fn pp_bert(terms: Vec<BertTerm>, indent_width: usize, terms_per_line: usize) {
+    let stdout = io::stdout();
+    let mut stdout = stdout.lock();
+    for t in terms {
+        let pp = bertterm::PrettyPrinter::new(&t, indent_width, terms_per_line);
+        let _ = writeln!(stdout, "{}", pp);
+    }
+}
+
+/// Outputs a BertTerm as JSON to stdout.
+fn pp_json(terms: Vec<BertTerm>, _: usize, _: usize) {
+    let stdout = io::stdout();
+    let mut stdout = stdout.lock();
+    for t in terms {
+        let pp = bertterm::JsonPrettyPrinter::new(&t, false);
+        let _ = writeln!(stdout, "{}", pp);
+    }
+}
+
+/// Outputs a BertTerm as JSON to stdout;
+/// Erlang proplists are converted to JSON objects.
+fn pp_json_proplist(terms: Vec<BertTerm>, _: usize, _: usize) {
+    let stdout = io::stdout();
+    let mut stdout = stdout.lock();
+    for t in terms {
+        let pp = bertterm::JsonPrettyPrinter::new(&t, true);
+        let _ = writeln!(stdout, "{}", pp);
+    }
 }
