@@ -74,6 +74,7 @@ fn main() {
     let max_per_line = value_t!(matches, "max_per_line", usize).unwrap();
     let verbose = matches.is_present("verbose");
     let parse_only = matches.is_present("parse");
+    let json = matches.is_present("json");
     let transform_proplists = matches.is_present("transform-proplists");
 
     let parse_fn =
@@ -84,20 +85,15 @@ fn main() {
         } else {
             parse_bert1
         };
-    let output_fn =
-        if matches.is_present("json") {
-            if transform_proplists {
-                pp_json_proplist
-            } else {
-                pp_json
-            }
-        } else {
-            if transform_proplists {
-                eprintln!("{}: warning: --transform-proplists is only valid with the --json flag",
-                          PROG_NAME);
-            }
+    let output_fn = match (json, transform_proplists) {
+        (true, false)  => pp_json,
+        (true, true)   => pp_json_proplist,
+        (false, false) => pp_bert,
+        (false, true)  => {
+            eprintln!("{}: --transform-proplists is only valid with the --json flag", PROG_NAME);
             pp_bert
-        };
+        }
+    };
 
     let mut return_code = 0;
     for file in files {
