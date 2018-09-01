@@ -1,3 +1,23 @@
+0.7.0
+=====
+
+Performance improvement
+-----------------------
+
+- Use `itoa` crate to write integers a bit faster.
+- Use `fs::read` to read input files almost two times faster.
+- Remove some heap allocations.
+
+API change
+----------
+
+- Simplify pretty printing API: `BertTerm` has two new functions,
+  `write_as_erlang` and `write_as_json`, they accept an io::Write
+  object.
+- The structs `PrettyPrinter` and `JsonPrettyPrinter` are
+  no longer public.
+
+
 0.6.1
 =====
 
