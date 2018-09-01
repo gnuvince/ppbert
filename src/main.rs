@@ -1,14 +1,14 @@
 extern crate ppbert;
 #[macro_use] extern crate clap;
 
-use std::io::{self, Read, Write};
+use std::io::{self, Read};
 use std::fs;
 use std::process::exit;
 use std::time::Instant;
 
 use clap::{Arg, App};
 
-use ppbert::bertterm::{self, BertTerm};
+use ppbert::bertterm::BertTerm;
 use ppbert::error::Result;
 use ppbert::parser;
 
@@ -193,8 +193,8 @@ fn pp_bert(terms: Vec<BertTerm>, indent_width: usize, terms_per_line: usize) {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
     for t in terms {
-        let pp = bertterm::PrettyPrinter::new(&t, indent_width, terms_per_line);
-        let _ = writeln!(stdout, "{}", pp);
+        let _ = t.write_as_erlang(&mut stdout, indent_width, terms_per_line);
+        println!(""); // newline
     }
 }
 
@@ -203,8 +203,8 @@ fn pp_json(terms: Vec<BertTerm>, _: usize, _: usize) {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
     for t in terms {
-        let pp = bertterm::JsonPrettyPrinter::new(&t, false);
-        let _ = writeln!(stdout, "{}", pp);
+        let _ = t.write_as_json(&mut stdout, false);
+        println!(""); // newline
     }
 }
 
@@ -214,7 +214,7 @@ fn pp_json_proplist(terms: Vec<BertTerm>, _: usize, _: usize) {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
     for t in terms {
-        let pp = bertterm::JsonPrettyPrinter::new(&t, true);
-        let _ = writeln!(stdout, "{}", pp);
+        let _ = t.write_as_json(&mut stdout, true);
+        println!(""); // newline
     }
 }

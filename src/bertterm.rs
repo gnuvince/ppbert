@@ -1,11 +1,12 @@
 extern crate itoa;
 
-use std::fmt::{self, Write as FmtWrite};
+use std::io;
 use std::iter;
 
 use num_bigint::{BigInt, Sign};
 
 use consts::*;
+use error::Result;
 
 #[derive(Debug, PartialEq)]
 pub enum BertTerm {
@@ -46,90 +47,95 @@ impl BertTerm {
     }
 
     fn is_proplist_entry(&self) -> bool {
+        fn is_proplist_tuple(elems: &[BertTerm]) -> bool {
+            match elems {
+                [BertTerm::Atom(_), _] => true,
+                [BertTerm::String(_), _] => true,
+                [BertTerm::Binary(_), _] => true,
+                _ => false
+            }
+        }
+
         match *self {
             BertTerm::Tuple(ref elems) => is_proplist_tuple(elems),
             _ => false
         }
     }
-}
 
-fn is_proplist_tuple(elems: &[BertTerm]) -> bool {
-    match elems {
-        [BertTerm::Atom(_), _] => true,
-        [BertTerm::String(_), _] => true,
-        [BertTerm::Binary(_), _] => true,
-        _ => false
+    pub fn write_as_erlang<W: io::Write>
+        (&self, w: &mut W, indent_width: usize, max_terms_per_line: usize) -> Result<()>
+    {
+        let () = ErlangPrettyPrinter::new(&self, indent_width, max_terms_per_line).write(w)?;
+        Ok(())
+    }
+
+    pub fn write_as_json<W: io::Write>
+        (&self, w: &mut W, transform_prolists: bool) -> Result<()>
+    {
+        let () = JsonPrettyPrinter::new(&self, transform_prolists).write(w)?;
+        Ok(())
     }
 }
 
-pub struct PrettyPrinter<'a> {
+struct ErlangPrettyPrinter<'a> {
     term: &'a BertTerm,
     indent_width: usize,
     max_terms_per_line: usize
 }
 
-impl <'a> fmt::Display for PrettyPrinter<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.write_term(self.term, f, 0)
-    }
-}
-
-impl <'a> PrettyPrinter<'a> {
+impl <'a> ErlangPrettyPrinter<'a> {
     /// Creates a pretty printer for `term` where sub-terms
     /// are indented with a width of `indent_width` and a
     /// maximum of `max_terms_per_line` basic terms (i.e.,
     /// integers, floats, strings) can be printed per line.
-    pub fn new(term: &'a BertTerm,
-               indent_width: usize,
-               max_terms_per_line: usize) -> Self {
-        PrettyPrinter { term, indent_width, max_terms_per_line }
+    fn new(term: &'a BertTerm, indent_width: usize, max_terms_per_line: usize) -> Self {
+        ErlangPrettyPrinter { term, indent_width, max_terms_per_line }
     }
 
+    fn write<W: io::Write>(&self, w: &mut W) -> Result<()> {
+        self.write_term(&self.term, w, 0).map_err(|e| e.into())
+    }
 
-    fn write_term(&self, term: &BertTerm, f: &mut fmt::Formatter, depth: usize) -> fmt::Result {
+    fn write_term<W: io::Write>(&self, term: &BertTerm, w: &mut W, depth: usize) -> io::Result<()> {
         match *term {
-            BertTerm::Nil => f.write_str("[]"),
-            BertTerm::Int(n) => itoa::fmt(f, n),
-            BertTerm::BigInt(ref n) => write!(f, "{}", n),
-            BertTerm::Float(x) => write!(f, "{}", x),
-            BertTerm::Atom(ref s) => f.write_str(s),
-            BertTerm::String(ref bytes) => self.write_string(bytes, f, "\"", "\""),
-            BertTerm::Binary(ref bytes) => self.write_string(bytes, f, "<<\"", "\">>"),
-            BertTerm::List(ref terms) => self.write_collection(terms, f, depth, '[', ']'),
-            BertTerm::Tuple(ref terms) => self.write_collection(terms, f, depth, '{', '}'),
-            BertTerm::Map(ref keys, ref vals) => self.write_map(keys, vals, f, depth)
+            BertTerm::Nil => w.write_all(b"[]"),
+            BertTerm::Int(n) => itoa::write(w, n).map(|_| ()),
+            BertTerm::BigInt(ref n) => write!(w, "{}", n),
+            BertTerm::Float(x) => write!(w, "{}", x),
+            BertTerm::Atom(ref s) => w.write_all(s.as_bytes()),
+            BertTerm::String(ref bytes) => self.write_string(bytes, w, b"\"", b"\""),
+            BertTerm::Binary(ref bytes) => self.write_string(bytes, w, b"<<\"", b"\">>"),
+            BertTerm::List(ref terms) => self.write_collection(terms, w, depth, b"[", b"]"),
+            BertTerm::Tuple(ref terms) => self.write_collection(terms, w, depth, b"{", b"}"),
+            BertTerm::Map(ref keys, ref vals) => self.write_map(keys, vals, w, depth)
         }
     }
 
 
-    fn write_string(&self,
-                    bytes: &[u8],
-                    f: &mut fmt::Formatter,
-                    open: &str,
-                    close: &str) -> fmt::Result {
-        // It's faster to write all the characters in a String
-        // and then write a str than it is to write each character
-        // individually.
-        let mut buf = String::with_capacity(4096);
-        buf.push_str(open);
-        for &b in bytes {
-            if is_printable(b) {
-                buf.push(b as char);
-            } else {
-                buf.push_str(&format!("\\x{:02x}", b));
+    fn write_string<W: io::Write>
+        (&self, bytes: &[u8], w: &mut W, open: &[u8], close: &[u8]) -> io::Result<()>
+    {
+        let mut start = 0;
+        w.write_all(open)?;
+
+        for (i, &b) in bytes.iter().enumerate() {
+            if !is_printable(b) {
+                w.write_all(&bytes[start .. i])?;
+                start = i + 1;
+                write!(w, "\\x{:02x}", b)?;
             }
         }
-        buf.push_str(close);
-        f.write_str(&buf)
+
+        // Write remaining bytes
+        w.write_all(&bytes[start..])?;
+        w.write_all(close)
     }
 
 
-    fn write_collection(&self,
-                        terms: &[BertTerm],
-                        f: &mut fmt::Formatter,
-                        depth: usize,
-                        open: char,
-                        close: char) -> fmt::Result {
+    fn write_collection<W: io::Write>
+        (&self, terms: &[BertTerm], w: &mut W, depth: usize, open: &[u8], close: &[u8])
+         -> io::Result<()>
+    {
         let multi_line = !self.is_small_collection(terms);
 
         // Every element will have the same indentation,
@@ -141,28 +147,26 @@ impl <'a> PrettyPrinter<'a> {
                 String::new()
             };
 
-        f.write_char(open)?;
+        w.write_all(open)?;
         let mut comma = "";
         for t in terms {
-            f.write_str(comma)?;
-            f.write_str(&prefix)?;
-            self.write_term(t, f, depth + 1)?;
+            w.write_all(comma.as_bytes())?;
+            w.write_all(prefix.as_bytes())?;
+            self.write_term(t, w, depth + 1)?;
             comma = ", ";
         }
 
         if multi_line {
-            f.write_str(&self.indentation(depth))?;
+            w.write_all(&self.indentation(depth).as_bytes())?;
         }
 
-        f.write_char(close)
+        w.write_all(close)
     }
 
 
-    fn write_map(&self,
-                 keys: &[BertTerm],
-                 vals: &[BertTerm],
-                 f: &mut fmt::Formatter,
-                 depth: usize) -> fmt::Result {
+    fn write_map<W: io::Write>
+        (&self, keys: &[BertTerm], vals: &[BertTerm], w: &mut W, depth: usize) -> io::Result<()>
+    {
         let multi_line =
             !self.is_small_collection(keys) || !self.is_small_collection(vals);
         let prefix =
@@ -172,21 +176,21 @@ impl <'a> PrettyPrinter<'a> {
                 String::new()
             };
 
-        f.write_str("#{")?;
+        w.write_all(b"#{")?;
         let mut comma = "";
         for i in 0 .. keys.len() {
-            f.write_str(comma)?;
-            f.write_str(&prefix)?;
-            self.write_term(&keys[i], f, depth + 1)?;
-            f.write_str(" => ")?;
-            self.write_term(&vals[i], f, depth + 1)?;
+            w.write_all(comma.as_bytes())?;
+            w.write_all(prefix.as_bytes())?;
+            self.write_term(&keys[i], w, depth + 1)?;
+            w.write_all(b" => ")?;
+            self.write_term(&vals[i], w, depth + 1)?;
             comma = ", ";
         }
 
         if multi_line {
-            f.write_str(&self.indentation(depth))?;
+            w.write_all(&self.indentation(depth).as_bytes())?;
         }
-        f.write_str("}")
+        w.write_all(b"}")
     }
 
     fn is_small_collection(&self, terms: &[BertTerm]) -> bool {
@@ -202,100 +206,96 @@ impl <'a> PrettyPrinter<'a> {
 }
 
 
-pub struct JsonPrettyPrinter<'a> {
+struct JsonPrettyPrinter<'a> {
     term: &'a BertTerm,
     transform_proplists: bool
 }
 
 impl <'a> JsonPrettyPrinter<'a> {
-    pub fn new(term: &'a BertTerm, transform_proplists: bool) -> Self {
+    fn new(term: &'a BertTerm, transform_proplists: bool) -> Self {
         JsonPrettyPrinter { term, transform_proplists }
     }
-}
 
-impl <'a> fmt::Display for JsonPrettyPrinter<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.term.write_json(f, self.transform_proplists)
+    fn write<W: io::Write>(&self, w: &mut W) -> Result<()> {
+        self.write_term(&self.term, w).map_err(|e| e.into())
     }
-}
 
-impl BertTerm {
-    fn write_json(&self, f: &mut fmt::Formatter, transform_proplists: bool) -> fmt::Result {
-        use self::BertTerm::*;
-        match *self {
-            Nil => f.write_str("[]"),
-            Int(n) => write!(f, "{}", n),
-            BigInt(ref b) => write!(f, "\"{}\"", b),
-            Float(x) => write!(f, "{}", x),
-            Atom(ref s) => write!(f, "\"{}\"", s),
-            List(ref terms) =>
-                if transform_proplists && self.is_proplist() {
-                    f.write_char('{')?;
-                    let mut first = true;
+    fn write_term<W: io::Write>(&self, term: &BertTerm, w: &mut W) -> io::Result<()> {
+        match *term {
+            BertTerm::Nil => w.write_all(b"[]"),
+            BertTerm::Int(n) => itoa::write(w, n).map(|_| ()),
+            BertTerm::BigInt(ref b) => write!(w, "\"{}\"", b),
+            BertTerm::Float(x) => write!(w, "{}", x),
+            BertTerm::Atom(ref s) => write!(w, "\"{}\"", s),
+            BertTerm::List(ref terms) =>
+                if self.transform_proplists && term.is_proplist() {
+                    w.write_all(b"{")?;
+                    let mut comma = "";
                     for term in terms {
-                        if !first { f.write_char(',')?; }
-                        first = false;
-                        term.write_as_kv_pair(f, transform_proplists)?;
+                        w.write_all(comma.as_bytes())?;
+                        comma = ",";
+                        self.write_as_kv_pair(term, w)?;
                     }
-                    f.write_char('}')
+                    w.write_all(b"}")
                 } else {
-                    self.write_list(f, terms, transform_proplists)
+                    self.write_list(terms, w)
                 }
-            Tuple(ref terms) => self.write_list(f, terms, transform_proplists),
-            Binary(ref bytes) | String(ref bytes) => {
-                let mut buf = ::std::string::String::with_capacity(4096);
-                buf.push('"');
-                for b in bytes {
-                    if must_be_escaped(*b) {
-                        buf.push('\\');
-                        buf.push(*b as char);
-                    } else if is_printable(*b) {
-                        buf.push(*b as char);
-                    } else {
-                        buf.push_str(&format!("\\u{:04x}", *b));
+            BertTerm::Tuple(ref terms) => self.write_list(terms, w),
+            BertTerm::Binary(ref bytes) | BertTerm::String(ref bytes) => {
+                w.write_all(b"\"")?;
+                let mut start = 0;
+                for (i, &b) in bytes.iter().enumerate() {
+                    if must_be_escaped(b) {
+                        w.write_all(&bytes[start .. i])?;
+                        start = i + 1;
+                        write!(w, "\\{}", b as char)?;
+                    } else if !is_printable(b) {
+                        w.write_all(&bytes[start .. i])?;
+                        start = i + 1;
+                        write!(w, "\\u{:04x}", b)?;
                     }
                 }
-                buf.push('"');
-                f.write_str(&buf)
+                w.write_all(&bytes[start..])?;
+                w.write_all(b"\"")
             }
-            Map(ref keys, ref values) => {
-                f.write_char('{')?;
-                let mut first = true;
+            BertTerm::Map(ref keys, ref values) => {
+                w.write_all(b"{")?;
+                let mut comma = "";
                 for (key, value) in keys.iter().zip(values) {
-                    if !first { f.write_char(',')?; }
-                    first = false;
-                    key.write_json(f, transform_proplists)?;
-                    f.write_char(':')?;
-                    value.write_json(f, transform_proplists)?;
+                    w.write_all(comma.as_bytes())?;
+                    comma = ",";
+                    self.write_term(key, w)?;
+                    w.write_all(b":")?;
+                    self.write_term(value, w)?;
                 }
-                f.write_char('}')
+                w.write_all(b"}")
             }
         }
     }
 
-    fn write_as_kv_pair(&self, f: &mut fmt::Formatter, transform_proplists: bool) -> fmt::Result {
-        match *self {
+    fn write_as_kv_pair<W: io::Write>(&self, term: &BertTerm, w: &mut W) -> io::Result<()> {
+        match *term {
             BertTerm::Tuple(ref kv) => {
                 assert_eq!(2, kv.len());
-                kv[0].write_json(f, transform_proplists)?;
-                f.write_char(':')?;
-                kv[1].write_json(f, transform_proplists)
+                self.write_term(&kv[0], w)?;
+                w.write_all(b":")?;
+                self.write_term(&kv[1], w)
             }
             _ => {
-                panic!("{:?} is not a proplist item", self)
+                panic!("{:?} is not a proplist item", term)
             }
         }
     }
 
-    fn write_list(&self, f: &mut fmt::Formatter, terms: &[BertTerm], transform_proplists: bool) -> fmt::Result {
-        f.write_char('[')?;
-        let mut first = true;
+    fn write_list<W: io::Write>(&self, terms: &[BertTerm], w: &mut W) -> io::Result<()> {
+        w.write_all(b"[")?;
+        let mut comma = "";
         for term in terms {
-            if !first { f.write_char(',')?; }
-            first = false;
-            term.write_json(f, transform_proplists)?;
+            w.write_all(comma.as_bytes())?;
+            comma = ",";
+            self.write_term(term, w)?;
         }
-        f.write_char(']')
+        w.write_all(b"]")
     }
 }
 
