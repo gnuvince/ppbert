@@ -3,6 +3,7 @@ extern crate itoa;
 use std::io;
 use std::iter;
 
+use byteorder::{BigEndian, WriteBytesExt};
 use num_bigint::{BigInt, Sign};
 
 use consts::*;
@@ -114,6 +115,15 @@ impl BertTerm {
         let () = JsonPrettyPrinter::new(&self, transform_prolists).write(w)?;
         Ok(())
     }
+
+    /// Writes a `BertTerm` into `W` encoded using Erlang's [External Term Format].
+    ///
+    /// [External Term Format]: http://erlang.org/doc/apps/erts/erl_ext_dist.html
+    pub fn write_as_bert<W: io::Write>(&self, w: &mut W) -> Result<()> {
+        BertWriter::new(&self).write(w)?;
+        return Ok(());
+    }
+
 }
 
 struct ErlangPrettyPrinter<'a> {
@@ -347,125 +357,105 @@ fn must_be_escaped(b: u8) -> bool {
     b == b'"' || b == b'\\'
 }
 
+struct BertWriter<'a> {
+    term: &'a BertTerm
+}
 
-impl BertTerm {
-    pub fn write_bert(&self) -> Vec<u8> {
-        let mut out: Vec<u8> = Vec::with_capacity(4096);
-        out.push(BERT_MAGIC_NUMBER);
-        self.dump_bert(&mut out);
-        return out;
+impl <'a> BertWriter<'a> {
+    fn new(term: &'a BertTerm) -> Self {
+        BertWriter { term }
     }
 
-    fn dump_bert(&self, out: &mut Vec<u8>) {
-        match *self {
-            BertTerm::Nil => out.push(NIL_EXT),
+    fn write<W: io::Write>(&self, w: &mut W) -> Result<()> {
+        w.write_u8(BERT_MAGIC_NUMBER)?;
+        self.write_bert(&self.term, w)?;
+        return Ok(());
+    }
+
+    fn write_bert<W: io::Write>(&self, term: &BertTerm, w: &mut W) -> io::Result<()> {
+        match *term {
+            BertTerm::Nil => w.write_u8(NIL_EXT),
             BertTerm::Int(n) => {
                 if n >= 0 && n < 256 {
-                    out.push(SMALL_INTEGER_EXT);
-                    out.push(n as u8);
+                    w.write_u8(SMALL_INTEGER_EXT)?;
+                    w.write_u8(n as u8)
                 } else {
-                    out.push(INTEGER_EXT);
-                    out.push( ((n >> 24) & 0xff) as u8 );
-                    out.push( ((n >> 16) & 0xff) as u8 );
-                    out.push( ((n >> 8) & 0xff) as u8 );
-                    out.push( (n & 0xff) as u8 );
+                    w.write_u8(INTEGER_EXT)?;
+                    w.write_i32::<BigEndian>(n)
                 }
             }
             BertTerm::BigInt(ref b) => {
                 let (sign, bytes) = b.to_bytes_le();
                 let len = bytes.len();
                 if len < 256 {
-                    out.push(SMALL_BIG_EXT);
-                    out.push(len as u8);
+                    w.write_u8(SMALL_BIG_EXT)?;
+                    w.write_u8(len as u8)?;
                 } else {
-                    out.push(LARGE_BIG_EXT);
-                    out.push( ((len >> 24) & 0xff) as u8 );
-                    out.push( ((len >> 16) & 0xff) as u8 );
-                    out.push( ((len >> 8) & 0xff) as u8 );
-                    out.push( (len & 0xff) as u8 );
+                    w.write_u8(LARGE_BIG_EXT)?;
+                    w.write_u32::<BigEndian>(len as u32)?;
                 }
                 if sign == Sign::Minus {
-                    out.push(1);
+                    w.write_u8(1)?;
                 } else {
-                    out.push(0);
+                    w.write_u8(0)?;
                 }
-                out.extend(bytes);
+                w.write_all(&bytes)
             }
             BertTerm::Float(f) => {
-                let n = f.to_bits();
-                out.push(NEW_FLOAT_EXT);
-                out.push( ((n >> 56) & 0xff) as u8 );
-                out.push( ((n >> 48) & 0xff) as u8 );
-                out.push( ((n >> 40) & 0xff) as u8 );
-                out.push( ((n >> 32) & 0xff) as u8 );
-                out.push( ((n >> 24) & 0xff) as u8 );
-                out.push( ((n >> 16) & 0xff) as u8 );
-                out.push( ((n >> 8) & 0xff) as u8 );
-                out.push( (n & 0xff) as u8 );
+                w.write_u8(NEW_FLOAT_EXT)?;
+                w.write_f64::<BigEndian>(f)
             }
             BertTerm::Tuple(ref terms) => {
                 let len = terms.len();
                 if len < 256 {
-                    out.push(SMALL_TUPLE_EXT);
-                    out.push(len as u8);
+                    w.write_u8(SMALL_TUPLE_EXT)?;
+                    w.write_u8(len as u8)?;
                 } else {
-                    out.push(LARGE_TUPLE_EXT);
-                    out.push( ((len >> 24) & 0xff) as u8 );
-                    out.push( ((len >> 16) & 0xff) as u8 );
-                    out.push( ((len >>  8) & 0xff) as u8 );
-                    out.push( (len & 0xff) as u8 );
+                    w.write_u8(LARGE_TUPLE_EXT)?;
+                    w.write_u32::<BigEndian>(len as u32)?;
                 }
                 for t in terms {
-                    t.dump_bert(out);
+                    self.write_bert(t, w)?;
                 }
+                Ok(())
             }
             BertTerm::List(ref terms) => {
                 let len = terms.len();
-                out.push(LIST_EXT);
-                out.push( ((len >> 24) & 0xff) as u8 );
-                out.push( ((len >> 16) & 0xff) as u8 );
-                out.push( ((len >>  8) & 0xff) as u8 );
-                out.push( (len & 0xff) as u8 );
+                w.write_u8(LIST_EXT)?;
+                w.write_u32::<BigEndian>(len as u32)?;
                 for t in terms {
-                    t.dump_bert(out);
+                    self.write_bert(t, w)?;
                 }
-                out.push(NIL_EXT);
+                w.write_u8(NIL_EXT)
             }
             BertTerm::Map(ref keys, ref vals) => {
                 let len = keys.len();
-                out.push(MAP_EXT);
-                out.push( ((len >> 24) & 0xff) as u8 );
-                out.push( ((len >> 16) & 0xff) as u8 );
-                out.push( ((len >>  8) & 0xff) as u8 );
-                out.push( (len & 0xff) as u8 );
+                w.write_u8(MAP_EXT)?;
+                w.write_u32::<BigEndian>(len as u32)?;
                 for (k, v) in keys.iter().zip(vals) {
-                    k.dump_bert(out);
-                    v.dump_bert(out);
+                    self.write_bert(k, w)?;
+                    self.write_bert(v, w)?;
                 }
+                Ok(())
             }
             BertTerm::Atom(ref chars) => {
-                let bytes = chars.bytes();
+                let bytes = chars.as_bytes();
                 let len = bytes.len();
-                out.push(ATOM_UTF8_EXT);
-                out.push( ((len >> 8) & 0xff) as u8 );
-                out.push( (len & 0xff) as u8 );
-                out.extend(bytes);
+                w.write_u8(ATOM_UTF8_EXT)?;
+                w.write_u16::<BigEndian>(len as u16)?;
+                w.write_all(bytes)
             }
             BertTerm::String(ref bytes) => {
                 let len = bytes.len();
-                out.push(STRING_EXT);
-                out.push( ((len >> 8) & 0xff) as u8 );
-                out.push( (len & 0xff) as u8 );
-                out.extend(bytes);
+                w.write_u8(STRING_EXT)?;
+                w.write_u16::<BigEndian>(len as u16)?;
+                w.write_all(bytes)
             }
             BertTerm::Binary(ref bytes) => {
                 let len = bytes.len();
-                out.push(BINARY_EXT);
-                out.push( ((len >> 24) & 0xff) as u8 );
-                out.push( ((len >> 16) & 0xff) as u8 );
-                out.push( ((len >>  8) & 0xff) as u8 );
-                out.push( (len & 0xff) as u8 );
-                out.extend(bytes);
+                w.write_u8(BINARY_EXT)?;
+                w.write_u32::<BigEndian>(len as u32)?;
+                w.write_all(bytes)
             }
         }
     }

@@ -6,7 +6,7 @@ use clap::{Arg, App};
 use rayon::prelude::*;
 
 use std::io::{self, Read, Write, BufWriter};
-use std::fs::File;
+use std::fs::{self, File};
 use std::path::PathBuf;
 use std::process::exit;
 use std::time::Instant;
@@ -74,8 +74,7 @@ fn handle(file: &str, verbose: bool, output_dir: &PathBuf) -> Result<(), BertErr
         let mut stdin = io::stdin();
         stdin.read_to_end(&mut buf)?;
     } else {
-        let mut f = File::open(file)?;
-        f.read_to_end(&mut buf)?;
+        buf = fs::read(file)?;
     }
 
     let top = Instant::now();
@@ -112,9 +111,10 @@ fn create_bert2_file(term: BertTerm, output_dir: &PathBuf) -> Result<(), BertErr
                         let f = File::create(path)?;
                         let mut stream = BufWriter::new(f);
                         for item in items {
-                            let item_bert = item.write_bert();
-                            stream.write_all(&usize_to_leb128(item_bert.len()))?;
-                            stream.write_all(&item_bert)?;
+                            let mut bytes = Vec::with_capacity(4096);
+                            item.write_as_bert(&mut bytes)?;
+                            stream.write_all(&usize_to_leb128(bytes.len()))?;
+                            stream.write_all(&bytes)?;
                         }
                     } else {
                         return Err(BertError::NotABertFile);
