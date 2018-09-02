@@ -8,18 +8,39 @@ use num_bigint::{BigInt, Sign};
 use consts::*;
 use error::Result;
 
+/// A enum representing a BertTerm
 #[derive(Debug, PartialEq)]
 pub enum BertTerm {
+    /// The empty list
     Nil,
+
+    /// A signed 32-bit integer
     Int(i32),
+
+    /// A signed arbitrary-size integer
     BigInt(BigInt),
+
+    /// A double-precision floating point number
     Float(f64),
+
+    /// An atom
     Atom(String),
-    Tuple(Vec<BertTerm>),
-    List(Vec<BertTerm>),
-    Map(Vec<BertTerm>, Vec<BertTerm>),
+
+    /// A latin-1-encoded string
     String(Vec<u8>),
-    Binary(Vec<u8>)
+
+    /// An array of bytes
+    Binary(Vec<u8>),
+
+    /// A container for a fixed number of elements
+    Tuple(Vec<BertTerm>),
+
+    /// A container for an arbitrary number of elements
+    List(Vec<BertTerm>),
+
+    /// A container for key-to-value pairs
+    Map(Vec<BertTerm>, Vec<BertTerm>),
+
 }
 
 impl BertTerm {
@@ -62,6 +83,15 @@ impl BertTerm {
         }
     }
 
+    /// Writes a `BertTerm` into `W` using Erlang syntax.
+    /// The output is indented and printed over multiple lines.
+    ///
+    /// - `indent_width`:
+    ///     how many spaces to use for indentation
+    /// - `max_terms_per_line`:
+    ///     a list or a tuple made of basic terms, it may be be
+    ///     printed on a single line of the number of elements does
+    ///     not exceed this limit.
     pub fn write_as_erlang<W: io::Write>
         (&self, w: &mut W, indent_width: usize, max_terms_per_line: usize) -> Result<()>
     {
@@ -69,6 +99,15 @@ impl BertTerm {
         Ok(())
     }
 
+    /// Writes a `BertTerm` into `W` using JSON syntax.
+    /// The output is not indented and is printed on a single line.
+    ///
+    /// - `transform_prolists`:
+    ///     Erlang proplists are sometimes used in place of maps.
+    ///     To make the output of `write_as_json` easier to manipulate
+    ///     in a tool like `jq`, the parameter `transform_prolists` is
+    ///     given the value `true` and the proplists will be output as
+    ///     JSON objects.
     pub fn write_as_json<W: io::Write>
         (&self, w: &mut W, transform_prolists: bool) -> Result<()>
     {
