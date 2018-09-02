@@ -45,6 +45,8 @@ pub enum BertTerm {
 }
 
 impl BertTerm {
+    /// Lists, tuples, and maps are not basic terms;
+    /// everything else is.
     fn is_basic(&self) -> bool {
         match *self {
             BertTerm::Int(_)
@@ -60,15 +62,9 @@ impl BertTerm {
         }
     }
 
+    /// A term is a proplist if it has this shape:
+    /// [ {atom|string|binary, term}* ]
     fn is_proplist(&self) -> bool {
-        match *self {
-            BertTerm::List(ref elems) =>
-                elems.iter().all(|e| e.is_proplist_entry()),
-            _ => false
-        }
-    }
-
-    fn is_proplist_entry(&self) -> bool {
         fn is_proplist_tuple(elems: &[BertTerm]) -> bool {
             match elems {
                 [BertTerm::Atom(_), _] => true,
@@ -78,11 +74,21 @@ impl BertTerm {
             }
         }
 
+        fn is_proplist_entry(t: &BertTerm) -> bool {
+            match *t {
+                BertTerm::Tuple(ref elems) => is_proplist_tuple(elems),
+                _ => false
+            }
+        }
+
         match *self {
-            BertTerm::Tuple(ref elems) => is_proplist_tuple(elems),
+            BertTerm::List(ref elems) =>
+                elems.iter().all(|e| is_proplist_entry(e)),
             _ => false
         }
     }
+
+
 
     /// Writes a `BertTerm` into `W` using Erlang syntax.
     /// The output is indented and printed over multiple lines.
