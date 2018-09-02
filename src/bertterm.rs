@@ -88,8 +88,6 @@ impl BertTerm {
         }
     }
 
-
-
     /// Writes a `BertTerm` into `W` using Erlang syntax.
     /// The output is indented and printed over multiple lines.
     ///
@@ -129,7 +127,6 @@ impl BertTerm {
         BertWriter::new(&self).write(w)?;
         return Ok(());
     }
-
 }
 
 struct ErlangPrettyPrinter<'a> {
