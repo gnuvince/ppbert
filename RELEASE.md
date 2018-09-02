@@ -1,3 +1,18 @@
+0.8.0
+=====
+
+API change
+----------
+
+- Replace `BertTerm::dump_term` with `BertTerm::write_as_bert`.
+
+Other changes
+-------------
+
+- Add API documentation in bertterm
+
+
+
 0.7.0
 =====
 
