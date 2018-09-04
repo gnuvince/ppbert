@@ -1,4 +1,5 @@
 use num_bigint::{BigInt, ToBigInt};
+use num_traits::{Zero, One};
 
 use byteorder::{ReadBytesExt, BigEndian};
 
@@ -248,8 +249,8 @@ impl Parser {
 
     fn bigint(&mut self, len: usize) -> Result<BertTerm> {
         let sign = self.eat_u8()?;
-        let mut sum: BigInt = (0_i32).to_bigint().expect("cannot convert 0 to bigint");
-        let mut pos: BigInt = (1_i32).to_bigint().expect("cannot convert 1 to bigint");
+        let mut sum: BigInt = Zero::zero();
+        let mut pos: BigInt = One::one();
         for _ in 0 .. len {
             let d = self.eat_u8()?;
             let t = &pos * &(d.to_bigint().unwrap());
