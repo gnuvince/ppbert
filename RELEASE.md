@@ -1,6 +1,15 @@
 0.8.0
 =====
 
+New features
+------------
+
+- Add `-t` as a short-hand for `--transform-proplists`
+
+
+0.8.0
+=====
+
 API change
 ----------
 
