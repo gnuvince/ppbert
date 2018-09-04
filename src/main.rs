@@ -63,7 +63,7 @@ fn main() {
              .long("json"))
         .arg(Arg::with_name("transform-proplists")
              .help("Transforms proplists into JSON objects (only valid with --json)")
-             .long("t")
+             .short("t")
              .long("transform-proplists"))
         .get_matches();
 
