@@ -30,7 +30,7 @@ Term Format:
 
 ```
 $ ppbert -h
-ppbert 0.6.0-rc1
+ppbert 0.8.3
 Vincent Foley
 Pretty print structure encoded in Erlang's External Term Format
 
@@ -43,13 +43,13 @@ FLAGS:
     -h, --help                   Prints help information
     -j, --json                   Outputs in JSON
     -p, --parse                  Parses the input, doesn't pretty print it
-        --transform-proplists    Transforms proplists into JSON objects (only valid with --json)
+    -t, --transform-proplists    Transforms proplists into JSON objects (only valid with --json)
     -V, --version                Prints version information
     -v, --verbose                Enables verbose mode
 
 OPTIONS:
-    -i, --indent-width <num>          Indents with <num> spaces
-    -m, --max-terms-per-line <num>    Prints at most <num> basic terms per line
+    -i, --indent-width <num>          Indents with <num> spaces [default: 2]
+    -m, --max-terms-per-line <num>    Prints at most <num> basic terms per line [default: 5]
 
 ARGS:
     <FILES>...
