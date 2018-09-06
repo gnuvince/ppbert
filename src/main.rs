@@ -160,10 +160,10 @@ fn handle_file(
     }
 
     if verbose {
-        eprintln!("{}: read time: {}.{:09}", PROG_NAME, read_dur.as_secs(), read_dur.subsec_nanos());
-        eprintln!("{}: parse time: {}.{:09}", PROG_NAME, parse_dur.as_secs(), parse_dur.subsec_nanos());
+        eprintln!("{}: {} read time: {}.{:06} seconds", PROG_NAME, file, read_dur.as_secs(), read_dur.subsec_micros());
+        eprintln!("{}: {} parse time: {}.{:06} seconds", PROG_NAME, file, parse_dur.as_secs(), parse_dur.subsec_micros());
         if !parse_only {
-            eprintln!("{}: print time: {}.{:09}", PROG_NAME, pp_dur.as_secs(), pp_dur.subsec_nanos());
+            eprintln!("{}: {} print time: {}.{:06} seconds", PROG_NAME, file, pp_dur.as_secs(), pp_dur.subsec_micros());
         }
     }
 
