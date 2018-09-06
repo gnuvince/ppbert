@@ -1,3 +1,15 @@
+0.8.3
+=====
+
+New features
+------------
+
+- The parsing and the prettying printing for .bert2 and disk_log files
+  are interleaved
+- The filename is included in verbose messages (e.g., how long the
+  parsing took)
+
+
 0.8.2
 =====
 
