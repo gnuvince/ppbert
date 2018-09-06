@@ -1,10 +1,10 @@
 extern crate ppbert;
 #[macro_use] extern crate clap;
 
-use std::io::{self, Read};
+use std::io::{self, Read, Write};
 use std::fs;
 use std::process::exit;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use clap::{Arg, App};
 
@@ -80,11 +80,11 @@ fn main() {
 
     let parse_fn =
         if matches.is_present("bert2") {
-            parse_bert2
+            parser::Parser::bert2_next
         } else if matches.is_present("disk_log") {
-            parse_disk_log
+            parser::Parser::disk_log_next
         } else {
-            parse_bert1
+            parser::Parser::bert_next
         };
     let output_fn = match (json, transform_proplists) {
         (true, false)  => pp_json,
@@ -113,14 +113,14 @@ fn main() {
 }
 
 
-fn handle_file<T>(
+fn handle_file(
     file: &str,
     parse_only: bool,
     verbose: bool,
     indent: usize,
     terms_per_line: usize,
-    parse_fn: fn(Vec<u8>) -> Result<T>,
-    pp_fn: fn(T, usize, usize) -> ()
+    parse_fn: fn(&mut parser::Parser) -> Option<Result<BertTerm>>,
+    pp_fn: fn(BertTerm, usize, usize) -> ()
 ) -> Result<()> {
 
     // Read file or stdin into buffer
@@ -134,84 +134,64 @@ fn handle_file<T>(
     } else {
         fs::read(file)?
     };
-    let dur = now.elapsed();
-    if verbose {
-        eprintln!("{}: read time: {}.{:09}",
-                  PROG_NAME, dur.as_secs(), dur.subsec_nanos());
+    let read_dur = now.elapsed();
+
+
+    let mut parser = parser::Parser::new(buf);
+    let mut parse_dur = Duration::new(0, 0);
+    let mut pp_dur = Duration::new(0, 0);
+
+    loop {
+        let now = Instant::now();
+        let next_item = parse_fn(&mut parser);
+        parse_dur += now.elapsed();
+
+        match next_item {
+            None => { break; }
+            Some(Err(e)) => { return Err(e); }
+            Some(Ok(t)) => {
+                if !parse_only {
+                    let now = Instant::now();
+                    pp_fn(t, indent, terms_per_line);
+                    pp_dur += now.elapsed();
+                }
+            }
+        }
     }
 
-    // Parse input
-    let now = Instant::now();
-    let parse_output = parse_fn(buf)?;
-    let dur = now.elapsed();
-
     if verbose {
-        eprintln!("{}: parse time: {}.{:09}",
-                  PROG_NAME, dur.as_secs(), dur.subsec_nanos());
-    }
-
-    // Early exit if parse-only
-    if parse_only {
-        return Ok(());
-    }
-
-    // Pretty print
-    let now = Instant::now();
-    pp_fn(parse_output, indent, terms_per_line);
-    let dur = now.elapsed();
-
-    if verbose {
-        eprintln!("{}: print time: {}.{:09}",
-                  PROG_NAME, dur.as_secs(), dur.subsec_nanos());
+        eprintln!("{}: read time: {}.{:09}", PROG_NAME, read_dur.as_secs(), read_dur.subsec_nanos());
+        eprintln!("{}: parse time: {}.{:09}", PROG_NAME, parse_dur.as_secs(), parse_dur.subsec_nanos());
+        if !parse_only {
+            eprintln!("{}: print time: {}.{:09}", PROG_NAME, pp_dur.as_secs(), pp_dur.subsec_nanos());
+        }
     }
 
     return Ok(());
 }
 
 
-fn parse_bert1(buf: Vec<u8>) -> Result<Vec<BertTerm>> {
-    let mut parser = parser::Parser::new(buf);
-    let term = parser.parse()?;
-    return Ok(vec![term]);
-}
-
-fn parse_bert2(buf: Vec<u8>) -> Result<Vec<BertTerm>> {
-    let mut parser = parser::Parser::new(buf);
-    return parser.parse_bert2();
-}
-
-fn parse_disk_log(buf: Vec<u8>) -> Result<Vec<BertTerm>> {
-    let mut parser = parser::Parser::new(buf);
-    return parser.parse_disk_log();
-}
-
-/// Outputs a vector of BertTerms to stdout.
-fn pp_bert(terms: Vec<BertTerm>, indent_width: usize, terms_per_line: usize) {
+/// Outputs a BertTerm to stdout.
+fn pp_bert(term: BertTerm, indent_width: usize, terms_per_line: usize) {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
-    for t in terms {
-        let _ = t.write_as_erlang(&mut stdout, indent_width, terms_per_line);
-        println!(""); // newline
-    }
+    let _ = term.write_as_erlang(&mut stdout, indent_width, terms_per_line);
+    let _ = writeln!(&mut stdout, ""); // newline, ignore SIGPIPE
 }
 
 /// Outputs a BertTerm as JSON to stdout.
-fn pp_json(terms: Vec<BertTerm>, _: usize, _: usize) {
+fn pp_json(term: BertTerm, _: usize, _: usize) {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
-    for t in terms {
-        let _ = t.write_as_json(&mut stdout, false);
-        println!(""); // newline
-    }
+    let _ = term.write_as_json(&mut stdout, false);
+    let _ = writeln!(&mut stdout, "");
 }
 
 /// Outputs a BertTerm as JSON to stdout;
 /// Erlang proplists are converted to JSON objects.
-fn pp_json_proplist(terms: Vec<BertTerm>, _: usize, _: usize) {
+fn pp_json_proplist(term: BertTerm, _: usize, _: usize) {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
-    for t in terms {
-        let _ = t.write_as_json(&mut stdout, true);
-        println!(""); // newline
-    }
+    let _ = term.write_as_json(&mut stdout, true);
+    let _ = writeln!(&mut stdout, "");
 }
