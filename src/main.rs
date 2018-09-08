@@ -117,7 +117,7 @@ fn handle_file(
     indent: usize,
     terms_per_line: usize,
     parse_fn: fn(&mut parser::Parser) -> Option<Result<BertTerm>>,
-    pp_fn: fn(BertTerm, usize, usize) -> ()
+    pp_fn: fn(BertTerm, usize, usize) -> Result<()>
 ) -> Result<()> {
 
     // Read file or stdin into buffer
@@ -149,7 +149,7 @@ fn handle_file(
             Some(Ok(t)) => {
                 if !parse_only {
                     let now = Instant::now();
-                    pp_fn(t, indent, terms_per_line);
+                    pp_fn(t, indent, terms_per_line)?;
                     pp_dur += now.elapsed();
                 }
             }
@@ -169,26 +169,29 @@ fn handle_file(
 
 
 /// Outputs a BertTerm to stdout.
-fn pp_bert(term: BertTerm, indent_width: usize, terms_per_line: usize) {
+fn pp_bert(term: BertTerm, indent_width: usize, terms_per_line: usize) -> Result <()> {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
-    let _ = term.write_as_erlang(&mut stdout, indent_width, terms_per_line);
-    let _ = writeln!(&mut stdout, ""); // newline, ignore SIGPIPE
+    term.write_as_erlang(&mut stdout, indent_width, terms_per_line)?;
+    writeln!(&mut stdout, "")?;
+    return Ok(());
 }
 
 /// Outputs a BertTerm as JSON to stdout.
-fn pp_json(term: BertTerm, _: usize, _: usize) {
+fn pp_json(term: BertTerm, _: usize, _: usize) -> Result <()> {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
-    let _ = term.write_as_json(&mut stdout, false);
-    let _ = writeln!(&mut stdout, "");
+    term.write_as_json(&mut stdout, false)?;
+    writeln!(&mut stdout, "")?;
+    return Ok(());
 }
 
 /// Outputs a BertTerm as JSON to stdout;
 /// Erlang proplists are converted to JSON objects.
-fn pp_json_proplist(term: BertTerm, _: usize, _: usize) {
+fn pp_json_proplist(term: BertTerm, _: usize, _: usize) -> Result <()> {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
-    let _ = term.write_as_json(&mut stdout, true);
-    let _ = writeln!(&mut stdout, "");
+    term.write_as_json(&mut stdout, true)?;
+    writeln!(&mut stdout, "")?;
+    return Ok(());
 }
