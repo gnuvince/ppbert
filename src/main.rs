@@ -75,13 +75,13 @@ fn main() {
     let json = matches.is_present("json");
     let transform_proplists = matches.is_present("transform-proplists");
 
-    let parse_fn =
+    let parse_fn: fn(&mut parser::Parser) -> Option<Result<BertTerm>> =
         if matches.is_present("bert2") {
-            parser::Parser::bert2_next
+            |parser| parser.bert2_next()
         } else if matches.is_present("disk_log") {
-            parser::Parser::disk_log_next
+            |parser| parser.disk_log_next()
         } else {
-            parser::Parser::bert_next
+            |parser| parser.bert_next()
         };
     let output_fn = match (json, transform_proplists) {
         (true, false)  => pp_json,
@@ -146,7 +146,8 @@ fn handle_file(
     let read_dur = now.elapsed();
 
 
-    let mut parser = parser::Parser::new(buf);
+    let mut parser = parser::Parser::new(&buf);
+
     let mut parse_dur = Duration::new(0, 0);
     let mut pp_dur = Duration::new(0, 0);
 

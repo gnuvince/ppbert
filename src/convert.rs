@@ -78,7 +78,7 @@ fn handle(file: &str, verbose: bool, output_dir: &PathBuf) -> Result<(), BertErr
     }
 
     let top = Instant::now();
-    let mut parser = parser::Parser::new(buf);
+    let mut parser = parser::Parser::new(&buf);
     let term = parser.parse()?;
     let dur1 = top.elapsed();
 

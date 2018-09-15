@@ -11,13 +11,13 @@ use consts::*;
 use error::{Result, BertError};
 
 #[derive(Debug)]
-pub struct Parser {
-    contents: Vec<u8>,
+pub struct Parser<'a> {
+    contents: &'a [u8],
     pos: usize,
 }
 
-impl Parser {
-    pub fn new(contents: Vec<u8>) -> Parser {
+impl <'a> Parser<'a> {
+    pub fn new(contents: &'a [u8]) -> Self {
         Parser { contents: contents, pos: 0 }
     }
 
