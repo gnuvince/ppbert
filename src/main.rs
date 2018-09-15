@@ -1,6 +1,8 @@
 extern crate ppbert;
 #[macro_use] extern crate clap;
+extern crate memmap;
 
+use std::convert::AsRef;
 use std::io::{self, ErrorKind, Read, Write, BufWriter};
 use std::fs;
 use std::process::exit;
@@ -134,19 +136,21 @@ fn handle_file(
 
     // Read file or stdin into buffer
     let now = Instant::now();
-    let buf = if file == "-" {
-        let stdin = io::stdin();
-        let mut stdin = stdin.lock();
-        let mut buf: Vec<u8> = Vec::with_capacity(4096);
-        stdin.read_to_end(&mut buf)?;
-        buf
-    } else {
-        fs::read(file)?
-    };
+    let buf: Box<AsRef<[u8]>> =
+        if file == "-" {
+            let stdin = io::stdin();
+            let mut stdin = stdin.lock();
+            let mut buf: Vec<u8> = Vec::with_capacity(4096);
+            stdin.read_to_end(&mut buf)?;
+            Box::new(buf)
+        } else {
+            let fd = fs::File::open(file)?;
+            let mmap = unsafe { memmap::Mmap::map(&fd)? };
+            Box::new(mmap)
+        };
     let read_dur = now.elapsed();
 
-
-    let mut parser = parser::Parser::new(&buf);
+    let mut parser = parser::Parser::new((*buf).as_ref());
 
     let mut parse_dur = Duration::new(0, 0);
     let mut pp_dur = Duration::new(0, 0);
