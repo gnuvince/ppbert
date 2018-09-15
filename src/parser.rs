@@ -404,7 +404,7 @@ impl <'a> Parser<'a> {
 #[test]
 fn test_varint() {
     assert_eq!(1, {
-        match Parser::new(vec![1]).parse_varint() {
+        match Parser::new(&[1]).parse_varint() {
             Ok(x) => x,
             Err(_) => u64::max_value()
         }
@@ -412,14 +412,14 @@ fn test_varint() {
 
 
     assert_eq!(300, {
-        match Parser::new(vec![0b1010_1100, 0b0000_0010]).parse_varint() {
+        match Parser::new(&[0b1010_1100, 0b0000_0010]).parse_varint() {
             Ok(x) => x,
             Err(_) => u64::max_value()
         }
     });
 
-    assert!(Parser::new(vec![0xff, 0xff, 0xff, 0xff,
-                             0xff, 0xff, 0xff, 0x7f]).parse_varint().is_ok());
-    assert!(Parser::new(vec![0xff, 0xff, 0xff, 0xff,
-                             0xff, 0xff, 0xff, 0x80]).parse_varint().is_err());
+    assert!(Parser::new(&[0xff, 0xff, 0xff, 0xff,
+                          0xff, 0xff, 0xff, 0x7f]).parse_varint().is_ok());
+    assert!(Parser::new(&[0xff, 0xff, 0xff, 0xff,
+                          0xff, 0xff, 0xff, 0x80]).parse_varint().is_err());
 }
