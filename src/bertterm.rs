@@ -97,8 +97,12 @@ impl BertTerm {
     ///     a list or a tuple made of basic terms, it may be be
     ///     printed on a single line of the number of elements does
     ///     not exceed this limit.
-    pub fn write_as_erlang<W: io::Write>
-        (&self, w: &mut W, indent_width: usize, max_terms_per_line: usize) -> Result<()>
+    pub fn write_as_erlang<W: io::Write>(
+        &self,
+        w: &mut W,
+        indent_width: usize,
+        max_terms_per_line: usize)
+        -> Result<()>
     {
         ErlangPrettyPrinter::new(indent_width, max_terms_per_line)
             .write(&self, w)?;
