@@ -100,7 +100,8 @@ impl BertTerm {
     pub fn write_as_erlang<W: io::Write>
         (&self, w: &mut W, indent_width: usize, max_terms_per_line: usize) -> Result<()>
     {
-        let () = ErlangPrettyPrinter::new(&self, indent_width, max_terms_per_line).write(w)?;
+        ErlangPrettyPrinter::new(indent_width, max_terms_per_line)
+            .write(&self, w)?;
         Ok(())
     }
 
@@ -116,7 +117,8 @@ impl BertTerm {
     pub fn write_as_json<W: io::Write>
         (&self, w: &mut W, transform_prolists: bool) -> Result<()>
     {
-        let () = JsonPrettyPrinter::new(&self, transform_prolists).write(w)?;
+        JsonPrettyPrinter::new(transform_prolists)
+            .write(&self, w)?;
         Ok(())
     }
 
@@ -124,28 +126,28 @@ impl BertTerm {
     ///
     /// [External Term Format]: http://erlang.org/doc/apps/erts/erl_ext_dist.html
     pub fn write_as_bert<W: io::Write>(&self, w: &mut W) -> Result<()> {
-        BertWriter::new(&self).write(w)?;
+        BertWriter::new()
+            .write(&self, w)?;
         return Ok(());
     }
 }
 
-struct ErlangPrettyPrinter<'a> {
-    term: &'a BertTerm,
+struct ErlangPrettyPrinter {
     indent_width: usize,
     max_terms_per_line: usize
 }
 
-impl <'a> ErlangPrettyPrinter<'a> {
+impl ErlangPrettyPrinter {
     /// Creates a pretty printer for `term` where sub-terms
     /// are indented with a width of `indent_width` and a
     /// maximum of `max_terms_per_line` basic terms (i.e.,
     /// integers, floats, strings) can be printed per line.
-    fn new(term: &'a BertTerm, indent_width: usize, max_terms_per_line: usize) -> Self {
-        ErlangPrettyPrinter { term, indent_width, max_terms_per_line }
+    fn new(indent_width: usize, max_terms_per_line: usize) -> Self {
+        ErlangPrettyPrinter { indent_width, max_terms_per_line }
     }
 
-    fn write<W: io::Write>(&self, w: &mut W) -> Result<()> {
-        self.write_term(&self.term, w, 0).map_err(|e| e.into())
+    fn write<W: io::Write>(&self, term: &BertTerm, w: &mut W) -> Result<()> {
+        self.write_term(term, w, 0).map_err(|e| e.into())
     }
 
     fn write_term<W: io::Write>(&self, term: &BertTerm, w: &mut W, depth: usize) -> io::Result<()> {
@@ -258,18 +260,17 @@ impl <'a> ErlangPrettyPrinter<'a> {
 }
 
 
-struct JsonPrettyPrinter<'a> {
-    term: &'a BertTerm,
+struct JsonPrettyPrinter {
     transform_proplists: bool
 }
 
-impl <'a> JsonPrettyPrinter<'a> {
-    fn new(term: &'a BertTerm, transform_proplists: bool) -> Self {
-        JsonPrettyPrinter { term, transform_proplists }
+impl JsonPrettyPrinter {
+    fn new(transform_proplists: bool) -> Self {
+        JsonPrettyPrinter { transform_proplists }
     }
 
-    fn write<W: io::Write>(&self, w: &mut W) -> Result<()> {
-        self.write_term(&self.term, w).map_err(|e| e.into())
+    fn write<W: io::Write>(&self, term: &BertTerm, w: &mut W) -> Result<()> {
+        self.write_term(term, w).map_err(|e| e.into())
     }
 
     fn write_term<W: io::Write>(&self, term: &BertTerm, w: &mut W) -> io::Result<()> {
@@ -360,18 +361,16 @@ fn must_be_escaped(b: u8) -> bool {
     b == b'"' || b == b'\\'
 }
 
-struct BertWriter<'a> {
-    term: &'a BertTerm
-}
+struct BertWriter;
 
-impl <'a> BertWriter<'a> {
-    fn new(term: &'a BertTerm) -> Self {
-        BertWriter { term }
+impl BertWriter {
+    fn new() -> Self {
+        BertWriter { }
     }
 
-    fn write<W: io::Write>(&self, w: &mut W) -> Result<()> {
+    fn write<W: io::Write>(&self, term: &BertTerm, w: &mut W) -> Result<()> {
         w.write_u8(BERT_MAGIC_NUMBER)?;
-        self.write_bert(&self.term, w)?;
+        self.write_bert(term, w)?;
         return Ok(());
     }
 
