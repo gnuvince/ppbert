@@ -12,9 +12,6 @@ use ppbert::bertterm::BertTerm;
 use ppbert::error::Result;
 use ppbert::parser;
 
-
-const DEFAULT_INDENT_WIDTH: &str = "2";
-const DEFAULT_MAX_TERMS_PER_LINE: &str = "5";
 const PROG_NAME: &str = "ppbert";
 
 fn main() {
@@ -30,14 +27,14 @@ fn main() {
              .value_name("num")
              .short("i")
              .long("indent-width")
-             .default_value(DEFAULT_INDENT_WIDTH)
+             .default_value("2")
              .takes_value(true))
         .arg(Arg::with_name("max_per_line")
              .help("Prints at most <num> basic terms per line")
              .value_name("num")
              .short("m")
              .long("max-terms-per-line")
-             .default_value(DEFAULT_MAX_TERMS_PER_LINE)
+             .default_value("5")
              .takes_value(true))
         .arg(Arg::with_name("verbose")
              .help("Enables verbose mode")
