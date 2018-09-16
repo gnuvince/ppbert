@@ -1,7 +1,7 @@
 extern crate ppbert;
 #[macro_use] extern crate clap;
 
-use std::io::{self, Read, Write};
+use std::io::{self, ErrorKind, Read, Write};
 use std::fs;
 use std::process::exit;
 use std::time::{Duration, Instant};
@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use clap::{Arg, App};
 
 use ppbert::bertterm::BertTerm;
-use ppbert::error::Result;
+use ppbert::error::{BertError, Result};
 use ppbert::parser;
 
 const PROG_NAME: &str = "ppbert";
@@ -100,13 +100,25 @@ fn main() {
                               parse_fn, output_fn);
         match res {
             Ok(()) => (),
-            Err(e) => {
+            Err(ref e) => {
+                if broken_pipe(e) {
+                    break;
+                }
                 return_code = 1;
                 eprintln!("{}: {}: {}", PROG_NAME, file, e);
             }
         }
     }
     exit(return_code);
+}
+
+
+fn broken_pipe(err: &BertError) -> bool {
+    match *err {
+        BertError::IoError(ref ioerr) =>
+            ioerr.kind() == ErrorKind::BrokenPipe,
+        _ => false
+    }
 }
 
 
