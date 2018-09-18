@@ -112,7 +112,7 @@ impl BertTerm {
     /// Writes a `BertTerm` into `W` using JSON syntax.
     /// The output is not indented and is printed on a single line.
     ///
-    /// - `transform_prolists`:
+    /// - `transform_proplists`:
     ///     Erlang proplists are sometimes used in place of maps.
     ///     To make the output of `write_as_json` easier to manipulate
     ///     in a tool like `jq`, the parameter `transform_prolists` is
