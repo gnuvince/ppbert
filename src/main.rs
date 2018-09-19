@@ -1,7 +1,7 @@
 extern crate ppbert;
 #[macro_use] extern crate clap;
 
-use std::io::{self, ErrorKind, Read, Write};
+use std::io::{self, ErrorKind, Read, Write, BufWriter};
 use std::fs;
 use std::process::exit;
 use std::time::{Duration, Instant};
@@ -183,7 +183,8 @@ fn handle_file(
 /// Outputs a BertTerm to stdout.
 fn pp_bert(term: BertTerm, indent_width: usize, terms_per_line: usize) -> Result <()> {
     let stdout = io::stdout();
-    let mut stdout = stdout.lock();
+    let stdout = stdout.lock();
+    let mut stdout = BufWriter::new(stdout);
     term.write_as_erlang(&mut stdout, indent_width, terms_per_line)?;
     writeln!(&mut stdout, "")?;
     return Ok(());
@@ -192,7 +193,8 @@ fn pp_bert(term: BertTerm, indent_width: usize, terms_per_line: usize) -> Result
 /// Outputs a BertTerm as JSON to stdout.
 fn pp_json(term: BertTerm, _: usize, _: usize) -> Result <()> {
     let stdout = io::stdout();
-    let mut stdout = stdout.lock();
+    let stdout = stdout.lock();
+    let mut stdout = BufWriter::new(stdout);
     term.write_as_json(&mut stdout, false)?;
     writeln!(&mut stdout, "")?;
     return Ok(());
@@ -202,7 +204,8 @@ fn pp_json(term: BertTerm, _: usize, _: usize) -> Result <()> {
 /// Erlang proplists are converted to JSON objects.
 fn pp_json_proplist(term: BertTerm, _: usize, _: usize) -> Result <()> {
     let stdout = io::stdout();
-    let mut stdout = stdout.lock();
+    let stdout = stdout.lock();
+    let mut stdout = BufWriter::new(stdout);
     term.write_as_json(&mut stdout, true)?;
     writeln!(&mut stdout, "")?;
     return Ok(());
