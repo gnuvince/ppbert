@@ -1,6 +1,8 @@
 # 0.8.4
 ## Bug fixes
   - Ensure that `ppbert` exits when a BrokenPipe error is encountered.
+## Performance improvements
+  - Wrap `stdout` in a `BufWriter`; this improves the performance of outputting as Erlang by 2x and JSON by 1.15x.
 
 
 # 0.8.3
