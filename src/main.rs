@@ -181,32 +181,35 @@ fn handle_file(
 
 
 /// Outputs a BertTerm to stdout.
-fn pp_bert(term: BertTerm, indent_width: usize, terms_per_line: usize) -> Result <()> {
+fn pp_bert(term: BertTerm, indent_width: usize, terms_per_line: usize) -> Result<()> {
     let stdout = io::stdout();
     let stdout = stdout.lock();
     let mut stdout = BufWriter::new(stdout);
     term.write_as_erlang(&mut stdout, indent_width, terms_per_line)?;
+    stdout.flush()?;
     writeln!(&mut stdout, "")?;
     return Ok(());
 }
 
 /// Outputs a BertTerm as JSON to stdout.
-fn pp_json(term: BertTerm, _: usize, _: usize) -> Result <()> {
+fn pp_json(term: BertTerm, _: usize, _: usize) -> Result<()> {
     let stdout = io::stdout();
     let stdout = stdout.lock();
     let mut stdout = BufWriter::new(stdout);
     term.write_as_json(&mut stdout, false)?;
     writeln!(&mut stdout, "")?;
+    stdout.flush()?;
     return Ok(());
 }
 
 /// Outputs a BertTerm as JSON to stdout;
 /// Erlang proplists are converted to JSON objects.
-fn pp_json_proplist(term: BertTerm, _: usize, _: usize) -> Result <()> {
+fn pp_json_proplist(term: BertTerm, _: usize, _: usize) -> Result<()> {
     let stdout = io::stdout();
     let stdout = stdout.lock();
     let mut stdout = BufWriter::new(stdout);
     term.write_as_json(&mut stdout, true)?;
     writeln!(&mut stdout, "")?;
+    stdout.flush()?;
     return Ok(());
 }
