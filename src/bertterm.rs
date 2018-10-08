@@ -1,4 +1,5 @@
 extern crate itoa;
+extern crate ryu;
 
 use std::io;
 use std::iter;
@@ -159,7 +160,10 @@ impl ErlangPrettyPrinter {
             BertTerm::Nil => w.write_all(b"[]"),
             BertTerm::Int(n) => itoa::write(w, n).map(|_| ()),
             BertTerm::BigInt(ref n) => write!(w, "{}", n),
-            BertTerm::Float(x) => write!(w, "{}", x),
+            BertTerm::Float(x) => {
+                let mut buf = ryu::Buffer::new();
+                w.write_all(buf.format(x).as_bytes())
+            }
             BertTerm::Atom(ref s) => w.write_all(s.as_bytes()),
             BertTerm::String(ref bytes) => self.write_string(bytes, w, b"\"", b"\""),
             BertTerm::Binary(ref bytes) => self.write_string(bytes, w, b"<<\"", b"\">>"),
