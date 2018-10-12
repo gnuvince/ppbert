@@ -1,3 +1,9 @@
+# 0.8.5
+## Bug fixes
+- Call `Write::flush()` to ensure that IO errors are propagated; necessary to exit early when a pipe is closed.  This causes a performance regression from 0.8.4.
+## Performance improvements
+- Use `ryu` to print floating point numbers.
+
 # 0.8.4
 ## Bug fixes
   - Ensure that `ppbert` exits when a BrokenPipe error is encountered.
