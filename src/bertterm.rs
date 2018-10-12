@@ -286,7 +286,10 @@ impl JsonPrettyPrinter {
             BertTerm::Nil => w.write_all(b"[]"),
             BertTerm::Int(n) => itoa::write(w, n).map(|_| ()),
             BertTerm::BigInt(ref b) => write!(w, "\"{}\"", b),
-            BertTerm::Float(x) => write!(w, "{}", x),
+            BertTerm::Float(x) => {
+                let mut buf = ryu::Buffer::new();
+                w.write_all(buf.format(x).as_bytes())
+            }
             BertTerm::Atom(ref s) => write!(w, "\"{}\"", s),
             BertTerm::List(ref terms) =>
                 if self.transform_proplists && term.is_proplist() {
