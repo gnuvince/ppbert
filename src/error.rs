@@ -14,7 +14,6 @@ pub enum BertError {
     InvalidFloat(usize),
     InvalidUTF8Atom(usize),
     InvalidLatin1Atom(usize),
-    ExtraData(usize),
     VarintTooLarge(usize),
     NotEnoughData { offset: usize, needed: usize, available: usize },
     InvalidDiskLogOpenedStatus(usize),
@@ -32,7 +31,6 @@ impl BertError {
             | InvalidFloat(offset)
             | InvalidUTF8Atom(offset)
             | InvalidLatin1Atom(offset)
-            | ExtraData(offset)
             | VarintTooLarge(offset)
             | InvalidDiskLogOpenedStatus(offset)
             | NotEnoughData { offset, .. } => Some(offset),
@@ -80,7 +78,6 @@ impl Error for BertError {
             InvalidFloat(_) => "invalid float",
             InvalidUTF8Atom(_) => "UTF-8 atom is not correctly encoded",
             InvalidLatin1Atom(_) => "Latin-1 atom is not correctly encoded",
-            ExtraData(_) => "extra data after the BERT term",
             VarintTooLarge(_) => "varint is too large (greater than 2^64-1)",
             NotEnoughData { .. } => "no enough data available",
             NotABertFile => "not a valid .bert file",
