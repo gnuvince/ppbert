@@ -21,15 +21,6 @@ impl Parser {
         Parser { contents: contents, pos: 0 }
     }
 
-    pub fn parse(&mut self) -> Result<BertTerm> {
-        let () = self.magic_number()?;
-        let term = self.bert_term()?;
-        if !self.eof() {
-            return Err(BertError::ExtraData(self.pos));
-        }
-        return Ok(term);
-    }
-
     pub fn bert_next(&mut self) -> Option<Result<BertTerm>> {
         if self.eof() {
             return None;
@@ -38,17 +29,6 @@ impl Parser {
             self.magic_number()
             .and_then(|_| self.bert_term());
         return Some(result);
-    }
-
-    pub fn parse_bert2(&mut self) -> Result<Vec<BertTerm>> {
-        let mut terms = Vec::with_capacity(32);
-        while !self.eof() {
-            let _ = self.parse_varint()?;
-            let _ = self.magic_number()?;
-            let t = self.bert_term()?;
-            terms.push(t);
-        }
-        return Ok(terms);
     }
 
     pub fn bert2_next(&mut self) -> Option<Result<BertTerm>> {
@@ -60,18 +40,6 @@ impl Parser {
             .and_then(|_| self.magic_number())
             .and_then(|_| self.bert_term());
         return Some(result);
-    }
-
-    pub fn parse_disk_log(&mut self) -> Result<Vec<BertTerm>> {
-        self.disk_log_magic()?;
-        self.disk_log_opened_status()?;
-
-        let mut terms = Vec::with_capacity(32);
-        while !self.eof() {
-            let t = self.disk_log_term()?;
-            terms.push(t);
-        }
-        return Ok(terms);
     }
 
     pub fn disk_log_next(&mut self) -> Option<Result<BertTerm>> {
