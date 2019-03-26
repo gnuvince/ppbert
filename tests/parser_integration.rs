@@ -9,7 +9,8 @@ use ppbert::error::{BertError, Result};
 
 fn p(bytes: &[u8]) -> Result<BertTerm> {
     let mut parser = parser::Parser::new(bytes.to_vec());
-    parser.parse()
+    let res = parser.bert_next().unwrap();
+    return res;
 }
 
 #[test]
@@ -20,12 +21,6 @@ fn magic_number() {
         Err(BertError::InvalidMagicNumber(_)) => true,
         _ => false
     });
-}
-
-#[test]
-fn consume_all() {
-    let extra: u8 = 42;
-    assert!(p(&[131, 97, 0, extra]).is_err());
 }
 
 #[test]
@@ -118,11 +113,6 @@ fn atom() {
         _ => false
     });
 
-    assert!(match p(b"\x83\x73\x03abcd") {
-        Err(BertError::ExtraData(_)) => true,
-        _ => false
-    });
-
     // latin1 (0xe9 = é)
     assert!(match p(b"\x83\x64\x00\x04caf\xe9") {
         Ok(BertTerm::Atom(ref s)) => s == "café",
@@ -159,18 +149,8 @@ fn atom_utf8() {
     // Not enough data
     let mut bert: Vec<u8> = vec![131, 119, (atom_bytes.len() + 1) as u8];
     bert.extend(&atom_bytes);
-    println!("{:?}", bert);
     assert!(match p(&bert) {
         Err(BertError::NotEnoughData { .. }) => true,
-        _ => false
-    });
-
-    // Too much data
-    let mut bert: Vec<u8> = vec![131, 119, (atom_bytes.len() - 1) as u8];
-    bert.extend(&atom_bytes);
-    println!("{:?}", bert);
-    assert!(match p(&bert) {
-        Err(BertError::ExtraData(_)) => true,
         _ => false
     });
 }
@@ -181,13 +161,6 @@ fn string() {
         Ok(BertTerm::String(ref s)) => s == b"foobar",
         _ => false
     });
-
-    // too many characters
-    assert!(match p(b"\x83\x6b\x00\x02foo") {
-        Err(BertError::ExtraData(_)) => true,
-        _ => false
-    });
-
 
     // not enough characters
     assert!(match p(b"\x83\x6b\x00\x04foo") {
@@ -200,12 +173,6 @@ fn string() {
 fn binary() {
     assert!(match p(b"\x83\x6d\x00\x00\x00\x06foobar") {
         Ok(BertTerm::Binary(ref s)) => s == b"foobar",
-        _ => false
-    });
-
-    // too many characters
-    assert!(match p(b"\x83\x6d\x00\x00\x00\x02foo") {
-        Err(BertError::ExtraData(_)) => true,
         _ => false
     });
 
