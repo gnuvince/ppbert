@@ -68,7 +68,7 @@ fn main() {
         Some(files) => files.collect(),
         None => vec!["-"]
     };
-    let indent_level = value_t!(matches, "indent_width", usize).unwrap();
+    let indent_width = value_t!(matches, "indent_width", usize).unwrap();
     let max_per_line = value_t!(matches, "max_per_line", usize).unwrap();
     let verbose = matches.is_present("verbose");
     let parse_only = matches.is_present("parse");
@@ -96,7 +96,7 @@ fn main() {
     let mut return_code = 0;
     for file in files {
         let res = handle_file(file, parse_only, verbose,
-                              indent_level, max_per_line,
+                              indent_width, max_per_line,
                               parse_fn, output_fn);
         match res {
             Ok(()) => (),
