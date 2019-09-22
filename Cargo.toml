@@ -21,11 +21,6 @@ name = "ppbert"
 path = "src/main.rs"
 bench = false
 
-[[bin]]
-name = "bert-convert"
-path = "src/convert.rs"
-bench = false
-
 [profile.release]
 debug = true
 lto = true
