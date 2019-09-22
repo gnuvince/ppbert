@@ -1,3 +1,9 @@
+# 0.9.0
+- `bert-convert` has been removed; I never used it, and it wasn't getting the love it deserved.
+- `ppbert` now uses `getopts` for command-line parsing.
+- Removing `rayon` and `clap` makes builds much faster, a nearly 3x speed-up on my machine.
+
+
 # 0.8.5
 ## Bug fixes
 - Call `Write::flush()` to ensure that IO errors are propagated; necessary to exit early when a pipe is closed.  This causes a performance regression from 0.8.4.
