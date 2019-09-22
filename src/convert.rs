@@ -1,8 +1,6 @@
 extern crate rayon;
 extern crate ppbert;
-#[macro_use] extern crate clap;
 
-use clap::{Arg, App};
 use rayon::prelude::*;
 
 use std::io::{self, Read, Write, BufWriter};
@@ -18,6 +16,7 @@ use ppbert::parser;
 const PROG_NAME: &str = "bert-convert";
 
 fn main() {
+    /*
     let matches = App::new(PROG_NAME)
         .version(crate_version!())
         .author("Vincent Foley")
@@ -65,6 +64,7 @@ fn main() {
         })
         .sum();
     exit((ret_code_sum > 0) as i32);
+    */
 }
 
 

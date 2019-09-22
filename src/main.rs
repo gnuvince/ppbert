@@ -1,84 +1,80 @@
+extern crate getopts;
 extern crate ppbert;
-#[macro_use] extern crate clap;
 
-use std::io::{self, ErrorKind, Read, Write, BufWriter};
+use std::env;
 use std::fs;
+use std::io::{self, ErrorKind, Read, Write, BufWriter};
 use std::process::exit;
 use std::time::{Duration, Instant};
 
-use clap::{Arg, App};
+use getopts::Options;
 
 use ppbert::bertterm::BertTerm;
+use ppbert::consts::VERSION;
 use ppbert::error::{BertError, Result};
 use ppbert::parser;
 
 const PROG_NAME: &str = "ppbert";
 
-fn main() {
-    let matches = App::new(PROG_NAME)
-        .version(crate_version!())
-        .author("Vincent Foley")
-        .about("Pretty print structure encoded in Erlang's External Term Format")
-        .arg(Arg::with_name("input_files")
-             .value_name("FILES")
-             .multiple(true))
-        .arg(Arg::with_name("indent_width")
-             .help("Indents with <num> spaces")
-             .value_name("num")
-             .short("i")
-             .long("indent-width")
-             .default_value("2")
-             .takes_value(true))
-        .arg(Arg::with_name("max_per_line")
-             .help("Prints at most <num> basic terms per line")
-             .value_name("num")
-             .short("m")
-             .long("max-terms-per-line")
-             .default_value("5")
-             .takes_value(true))
-        .arg(Arg::with_name("verbose")
-             .help("Enables verbose mode")
-             .short("v")
-             .long("verbose"))
-        .arg(Arg::with_name("parse")
-             .help("Parses the input, doesn't pretty print it")
-             .short("p")
-             .long("parse"))
-        .arg(Arg::with_name("bert2")
-             .help("Parses .bert2 files")
-             .conflicts_with("disk_log")
-             .short("2")
-             .long("bert2"))
-        .arg(Arg::with_name("disk_log")
-             .help("Parses disk_log files")
-             .conflicts_with("bert2")
-             .short("d")
-             .long("disk-log"))
-        .arg(Arg::with_name("json")
-             .help("Outputs in JSON")
-             .short("j")
-             .long("json"))
-        .arg(Arg::with_name("transform-proplists")
-             .help("Transforms proplists into JSON objects (only valid with --json)")
-             .short("t")
-             .long("transform-proplists"))
-        .get_matches();
+fn opt_usize(m: &getopts::Matches, opt: &str, default: usize) -> usize {
+    match m.opt_get_default(opt, default) {
+        Ok(n) => n,
+        Err(_) => {
+            eprintln!("'{}' must be a number", opt);
+            exit(1);
+        }
+    }
+}
 
-    let files: Vec<&str> = match matches.values_of("input_files") {
-        Some(files) => files.collect(),
-        None => vec!["-"]
+
+fn main() {
+    let mut opts = Options::new();
+    opts.optflag("V", "version", "display version");
+    opts.optflag("h", "help", "display this help");
+    opts.optopt("i", "indent", "indent with NUM spaces", "NUM");
+    opts.optopt("m", "per-line", "print at most NUM basic terms per line", "NUM");
+    opts.optflag("p", "parse", "parse only, not pretty print");
+    opts.optflag("2", "bert2", "parse .bert2 files");
+    opts.optflag("d", "disk-log", "parse disk_log files");
+    opts.optflag("v", "verbose", "show diagnostics on stderr");
+    opts.optflag("j", "json", "print as JSON");
+    opts.optflag("t", "transform-proplists", "convert proplists to JSON objects");
+
+    let mut matches = match opts.parse(env::args().skip(1)) {
+        Ok(m) => m,
+        Err(e) => {
+            eprintln!("{}: {}", PROG_NAME, e);
+            eprintln!("{}", opts.usage(&format!("{} {}", PROG_NAME, VERSION)));
+            exit(1);
+        }
     };
-    let indent_width = value_t!(matches, "indent_width", usize).unwrap();
-    let max_per_line = value_t!(matches, "max_per_line", usize).unwrap();
-    let verbose = matches.is_present("verbose");
-    let parse_only = matches.is_present("parse");
-    let json = matches.is_present("json");
-    let transform_proplists = matches.is_present("transform-proplists");
+
+    if matches.opt_present("help") {
+        println!("{}", opts.usage(&format!("{} {}", PROG_NAME, VERSION)));
+        exit(0);
+    }
+
+    if matches.opt_present("version") {
+        println!("{} {}", PROG_NAME, VERSION);
+        exit(0);
+    }
+
+    // If no files to process, use stdin.
+    if matches.free.is_empty() {
+        matches.free.push("-".to_owned());
+    }
+
+    let indent_width = opt_usize(&matches, "indent", 2);
+    let max_per_line = opt_usize(&matches, "per-line", 6);
+    let parse_only = matches.opt_present("parse");
+    let json = matches.opt_present("json");
+    let transform_proplists = matches.opt_present("transform-proplists");
+    let verbose = matches.opt_present("verbose");
 
     let parse_fn =
-        if matches.is_present("bert2") {
+        if matches.opt_present("bert2") {
             parser::Parser::bert2_next
-        } else if matches.is_present("disk_log") {
+        } else if matches.opt_present("disk-log") {
             parser::Parser::disk_log_next
         } else {
             parser::Parser::bert_next
@@ -94,7 +90,7 @@ fn main() {
     };
 
     let mut return_code = 0;
-    for file in files {
+    for file in &matches.free {
         let res = handle_file(file, parse_only, verbose,
                               indent_width, max_per_line,
                               parse_fn, output_fn);
@@ -110,6 +106,7 @@ fn main() {
         }
     }
     exit(return_code);
+
 }
 
 
