@@ -1,7 +1,6 @@
 # Table of contents
 
 - [ppbert](#ppbert)
-- [bert-convert](#bert-convert)
 
 # ppbert
 
@@ -29,30 +28,21 @@ Term Format:
 ## Usage
 
 ```
-$ ppbert -h
-ppbert 0.8.3
-Vincent Foley
-Pretty print structure encoded in Erlang's External Term Format
+$ ppbert --help
+ppbert 0.9.0
 
-USAGE:
-    ppbert [FLAGS] [OPTIONS] [FILES]...
-
-FLAGS:
-    -2, --bert2                  Parses .bert2 files
-    -d, --disk-log               Parses disk_log files
-    -h, --help                   Prints help information
-    -j, --json                   Outputs in JSON
-    -p, --parse                  Parses the input, doesn't pretty print it
-    -t, --transform-proplists    Transforms proplists into JSON objects (only valid with --json)
-    -V, --version                Prints version information
-    -v, --verbose                Enables verbose mode
-
-OPTIONS:
-    -i, --indent-width <num>          Indents with <num> spaces [default: 2]
-    -m, --max-terms-per-line <num>    Prints at most <num> basic terms per line [default: 5]
-
-ARGS:
-    <FILES>...
+Options:
+    -V, --version       display version
+    -h, --help          display this help
+    -i, --indent NUM    indent with NUM spaces
+    -m, --per-line NUM  print at most NUM basic terms per line
+    -p, --parse         parse only, not pretty print
+    -2, --bert2         parse .bert2 files
+    -d, --disk-log      parse disk_log files
+    -v, --verbose       show diagnostics on stderr
+    -j, --json          print as JSON
+    -t, --transform-proplists
+                        convert proplists to JSON objects
 
 
 $ ppbert mini_dict.bert
@@ -104,40 +94,4 @@ $ time ppbert large.bert >/dev/null
 real	0m1.802s
 user	0m1.251s
 sys     0m0.549s
-```
-
-# bert-convert
-
-A command-line utility to convert a bert file encoded in
-[bertconf's](https://github.com/ferd/bertconf) DB format to
-[rig's](https://github.com/lpgauth/rig) format.
-
-## Usage
-
-```
-$ bert-convert -h
-bert-convert 0.6.0-rc1
-Vincent Foley
-Convert bertconf .bert files to rig .bert2 files
-
-USAGE:
-    bert-convert [FLAGS] [OPTIONS] [FILES]...
-
-FLAGS:
-    -h, --help       Prints help information
-    -V, --version    Prints version information
-    -v, --verbose    Enables verbose mode
-
-OPTIONS:
-    -d, --output-dir <DIR>    Selects the output directory [default: .]
-
-ARGS:
-    <FILES>...
-
-
-$ bert-convert -v -d /tmp/bert2 large.bert
-bert-convert: large.bert: Parse time: 0.556925379s; Dump time: 0.580329024s
-
-$ ls /tmp/bert2
-large.bert2
 ```
