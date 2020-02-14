@@ -1,4 +1,4 @@
-# 0.9.1
+# 0.9.2
 - Add a GitHub Actions pipeline to create Linux, macOS and Windows binaries
 
 # 0.9.0

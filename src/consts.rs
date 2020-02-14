@@ -22,4 +22,4 @@ pub const DISK_LOG_OPENED: u32 = 0x06070809;
 pub const DISK_LOG_CLOSED: u32 = 0x63584d0b;
 pub const DISK_LOG_TERM_MAGIC: u32 = 0x62574c41;
 
-pub const VERSION: &str = "0.9.0";
+pub const VERSION: &str = "0.9.2";
