@@ -1,0 +1,48 @@
+name: Test and build ppbert
+
+on: push
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run tests
+      run: cargo test --verbose
+
+  release-linux-musl:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: rustup target add x86_64-unknown-linux-musl
+    - run: cargo build --release --target=x86_64-unknown-linux-musl
+    - uses: actions/upload-artifact@v1
+      with:
+        name: ppbert_linux_musl
+        path: target/x86_64-unknown-linux-musl/release/ppbert
+
+  release-macos:
+    needs: test
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: cargo build --release
+    - uses: actions/upload-artifact@v1
+      with:
+        name: ppbert_macos
+        path: target/release/ppbert
+
+  release-windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: cargo build --release
+    - uses: actions/upload-artifact@v1
+      with:
+        name: ppbert_windows
+        path: target/release/ppbert.exe
