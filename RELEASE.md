@@ -1,3 +1,6 @@
+# 0.9.1
+- Add a GitHub Actions pipeline to create Linux, macOS and Windows binaries
+
 # 0.9.0
 - `bert-convert` has been removed; I never used it, and it wasn't getting the love it deserved.
 - `ppbert` now uses `getopts` for command-line parsing.
