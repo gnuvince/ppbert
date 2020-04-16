@@ -181,7 +181,12 @@ impl ErlangPrettyPrinter {
         w.write_all(open)?;
 
         for (i, &b) in bytes.iter().enumerate() {
-            if !is_printable(b) {
+            if must_be_escaped(b) {
+                w.write_all(&bytes[start .. i])?;
+                start = i + 1;
+                write!(w, "\\{}", b as char)?;
+            }
+            else if !is_printable(b) {
                 w.write_all(&bytes[start .. i])?;
                 start = i + 1;
                 write!(w, "\\x{:02x}", b)?;
