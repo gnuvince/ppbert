@@ -1,3 +1,9 @@
+# 0.9.3
+- BUGFIX: Properly escape double quotes and backslashes in binary and
+  string literals
+- FEATURE: Display the atoms true and false as the JSON booleans
+  rather than the strings "true" and "false
+
 # 0.9.2
 - Add a GitHub Actions pipeline to create Linux, macOS and Windows binaries
 
