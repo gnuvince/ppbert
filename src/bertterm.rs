@@ -304,7 +304,6 @@ impl JsonPrettyPrinter {
                     write!(w, "\"{}\"", s)
                 }
             }
-            BertTerm::Atom(ref s) => write!(w, "\"{}\"", s),
             BertTerm::List(ref terms) =>
                 if self.transform_proplists && term.is_proplist() {
                     w.write_all(b"{")?;
