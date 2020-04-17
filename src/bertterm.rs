@@ -295,6 +295,15 @@ impl JsonPrettyPrinter {
                 let mut buf = ryu::Buffer::new();
                 w.write_all(buf.format(x).as_bytes())
             }
+            BertTerm::Atom(ref s) => {
+                if s == "true" {
+                    write!(w, "true")
+                } else if s == "false" {
+                    write!(w, "false")
+                } else {
+                    write!(w, "\"{}\"", s)
+                }
+            }
             BertTerm::Atom(ref s) => write!(w, "\"{}\"", s),
             BertTerm::List(ref terms) =>
                 if self.transform_proplists && term.is_proplist() {
