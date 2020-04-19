@@ -17,9 +17,6 @@ pub enum BertError {
     VarintTooLarge(usize),
     NotEnoughData { offset: usize, needed: usize, available: usize },
     InvalidDiskLogOpenedStatus(usize),
-
-    // conversion errors
-    NotABertFile,
 }
 
 impl BertError {
@@ -49,43 +46,35 @@ impl BertError {
     }
 }
 
-pub type Result<T> = result::Result<T, BertError>;
-
-
 impl fmt::Display for BertError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.offset() {
-            Some(offset) =>
-                write!(f, "{} at offset {}", self.description(), offset)?,
-            None =>
-                write!(f, "{}", self.description())?
-        }
-        match self.extra_info() {
-            None => write!(f, ""),
-            Some(ref s) => write!(f, ": {}", s)
-        }
-    }
-}
-
-
-impl Error for BertError {
-    fn description(&self) -> &str {
         use self::BertError::*;
         match *self {
-            IoError(ref io_err) => io_err.description(),
-            InvalidMagicNumber(_) => "invalid magic number",
-            InvalidTag(_, _) => "invalid tag",
-            InvalidFloat(_) => "invalid float",
-            InvalidUTF8Atom(_) => "UTF-8 atom is not correctly encoded",
-            InvalidLatin1Atom(_) => "Latin-1 atom is not correctly encoded",
-            VarintTooLarge(_) => "varint is too large (greater than 2^64-1)",
-            NotEnoughData { .. } => "no enough data available",
-            NotABertFile => "not a valid .bert file",
-            InvalidDiskLogOpenedStatus(_) => "invalid file opened status",
+            IoError(ref io_err) => write!(f, "{}", io_err)?,
+            InvalidMagicNumber(_) => write!(f, "invalid magic number")?,
+            InvalidTag(_, _) => write!(f, "invalid tag")?,
+            InvalidFloat(_) => write!(f, "invalid float")?,
+            InvalidUTF8Atom(_) => write!(f, "UTF-8 atom is not correctly encoded")?,
+            InvalidLatin1Atom(_) => write!(f, "Latin-1 atom is not correctly encoded")?,
+            VarintTooLarge(_) => write!(f, "varint is too large (greater than 2^64-1)")?,
+            NotEnoughData { .. } => write!(f, "no enough data available")?,
+            InvalidDiskLogOpenedStatus(_) => write!(f, "invalid file opened status")?,
+        }
+
+        match self.offset() {
+            Some(offset) => write!(f, " at offset {}", offset)?,
+            None => (),
+        }
+        match self.extra_info() {
+            Some(ref s) => write!(f, ": {}", s),
+            None => Ok(()),
         }
     }
 }
 
+impl Error for BertError {}
+
+pub type Result<T> = result::Result<T, BertError>;
 
 impl From<io::Error> for BertError {
     fn from(io_err: io::Error) -> BertError {
