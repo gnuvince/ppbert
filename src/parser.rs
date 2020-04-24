@@ -10,6 +10,87 @@ use bertterm::BertTerm;
 use consts::*;
 use error::{Result, BertError};
 
+
+pub trait Parser {
+    fn next(&mut self) -> Option<Result<BertTerm>>;
+}
+
+
+pub struct Bert1Parser {
+    basic_parser: BasicParser
+}
+
+impl Bert1Parser {
+    pub fn new(contents: Vec<u8>) -> Self {
+        Bert1Parser {
+            basic_parser: BasicParser::new(contents)
+        }
+    }
+}
+
+impl Parser for Bert1Parser {
+    fn next(&mut self) -> Option<Result<BertTerm>> {
+        if self.basic_parser.eof() {
+            return None;
+        }
+        let result =
+            self.basic_parser.magic_number()
+            .and_then(|_| self.basic_parser.bert_term());
+        return Some(result);
+    }
+}
+
+
+pub struct Bert2Parser {
+    basic_parser: BasicParser
+}
+
+impl Bert2Parser {
+    pub fn new(contents: Vec<u8>) -> Self {
+        Bert2Parser {
+            basic_parser: BasicParser::new(contents)
+        }
+    }
+}
+
+impl Parser for Bert2Parser {
+    fn next(&mut self) -> Option<Result<BertTerm>> {
+        if self.basic_parser.eof() {
+            return None;
+        }
+        let result =
+            self.basic_parser.parse_varint()
+            .and_then(|_| self.basic_parser.magic_number())
+            .and_then(|_| self.basic_parser.bert_term());
+        return Some(result);
+    }
+}
+
+pub struct DiskLogParser {
+    basic_parser: BasicParser
+}
+
+impl DiskLogParser {
+    pub fn new(contents: Vec<u8>) -> Self {
+        DiskLogParser {
+            basic_parser: BasicParser::new(contents)
+        }
+    }
+}
+
+impl Parser for DiskLogParser {
+    fn next(&mut self) -> Option<Result<BertTerm>> {
+        if self.basic_parser.eof() {
+            return None;
+        }
+        let result =
+            self.basic_parser.disk_log_magic()
+            .and_then(|_| self.basic_parser.disk_log_opened_status())
+            .and_then(|_| self.basic_parser.disk_log_term());
+        return Some(result);
+    }
+}
+
 #[derive(Debug)]
 pub struct BasicParser {
     contents: Vec<u8>,
