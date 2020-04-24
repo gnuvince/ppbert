@@ -118,6 +118,18 @@ fn broken_pipe(err: &BertError) -> bool {
     }
 }
 
+fn read_bytes(filename: &str) -> Result<Vec<u8>> {
+    if filename == "-" {
+        let stdin = io::stdin();
+        let mut stdin = stdin.lock();
+        let mut buf: Vec<u8> = Vec::with_capacity(4096);
+        stdin.read_to_end(&mut buf)?;
+        return Ok(buf);
+    } else {
+        let buf = fs::read(filename)?;
+        return Ok(buf);
+    }
+}
 
 fn handle_file(
     file: &str,
@@ -131,15 +143,7 @@ fn handle_file(
 
     // Read file or stdin into buffer
     let now = Instant::now();
-    let buf = if file == "-" {
-        let stdin = io::stdin();
-        let mut stdin = stdin.lock();
-        let mut buf: Vec<u8> = Vec::with_capacity(4096);
-        stdin.read_to_end(&mut buf)?;
-        buf
-    } else {
-        fs::read(file)?
-    };
+    let buf = read_bytes(file)?;
     let read_dur = now.elapsed();
 
 
