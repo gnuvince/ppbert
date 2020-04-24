@@ -132,7 +132,7 @@ fn read_bytes(filename: &str) -> Result<Vec<u8>> {
 }
 
 fn handle_file(
-    file: &str,
+    filename: &str,
     parse_only: bool,
     verbose: bool,
     indent: usize,
@@ -143,7 +143,7 @@ fn handle_file(
 
     // Read file or stdin into buffer
     let now = Instant::now();
-    let buf = read_bytes(file)?;
+    let buf = read_bytes(filename)?;
     let read_dur = now.elapsed();
 
 
@@ -170,10 +170,10 @@ fn handle_file(
     }
 
     if verbose {
-        eprintln!("{}: {} read time: {}.{:06} seconds", PROG_NAME, file, read_dur.as_secs(), read_dur.subsec_micros());
-        eprintln!("{}: {} parse time: {}.{:06} seconds", PROG_NAME, file, parse_dur.as_secs(), parse_dur.subsec_micros());
+        eprintln!("{}: {} read time: {}.{:06} seconds", PROG_NAME, filename, read_dur.as_secs(), read_dur.subsec_micros());
+        eprintln!("{}: {} parse time: {}.{:06} seconds", PROG_NAME, filename, parse_dur.as_secs(), parse_dur.subsec_micros());
         if !parse_only {
-            eprintln!("{}: {} print time: {}.{:06} seconds", PROG_NAME, file, pp_dur.as_secs(), pp_dur.subsec_micros());
+            eprintln!("{}: {} print time: {}.{:06} seconds", PROG_NAME, filename, pp_dur.as_secs(), pp_dur.subsec_micros());
         }
     }
 
