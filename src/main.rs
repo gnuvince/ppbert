@@ -73,11 +73,11 @@ fn main() {
 
     let parse_fn =
         if matches.opt_present("bert2") {
-            parser::Parser::bert2_next
+            parser::BasicParser::bert2_next
         } else if matches.opt_present("disk-log") {
-            parser::Parser::disk_log_next
+            parser::BasicParser::disk_log_next
         } else {
-            parser::Parser::bert_next
+            parser::BasicParser::bert_next
         };
     let output_fn = match (json, transform_proplists) {
         (true, false)  => pp_json,
@@ -137,7 +137,7 @@ fn handle_file(
     verbose: bool,
     indent: usize,
     terms_per_line: usize,
-    parse_fn: fn(&mut parser::Parser) -> Option<Result<BertTerm>>,
+    parse_fn: fn(&mut parser::BasicParser) -> Option<Result<BertTerm>>,
     pp_fn: fn(BertTerm, usize, usize) -> Result<()>
 ) -> Result<()> {
 
@@ -147,7 +147,7 @@ fn handle_file(
     let read_dur = now.elapsed();
 
 
-    let mut parser = parser::Parser::new(buf);
+    let mut parser = parser::BasicParser::new(buf);
     let mut parse_dur = Duration::new(0, 0);
     let mut pp_dur = Duration::new(0, 0);
 

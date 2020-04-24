@@ -11,14 +11,14 @@ use consts::*;
 use error::{Result, BertError};
 
 #[derive(Debug)]
-pub struct Parser {
+pub struct BasicParser {
     contents: Vec<u8>,
     pos: usize,
 }
 
-impl Parser {
-    pub fn new(contents: Vec<u8>) -> Parser {
-        Parser { contents: contents, pos: 0 }
+impl BasicParser {
+    pub fn new(contents: Vec<u8>) -> BasicParser {
+        BasicParser { contents: contents, pos: 0 }
     }
 
     pub fn bert_next(&mut self) -> Option<Result<BertTerm>> {
@@ -372,7 +372,7 @@ impl Parser {
 #[test]
 fn test_varint() {
     assert_eq!(1, {
-        match Parser::new(vec![1]).parse_varint() {
+        match BasicParser::new(vec![1]).parse_varint() {
             Ok(x) => x,
             Err(_) => u64::max_value()
         }
@@ -380,14 +380,14 @@ fn test_varint() {
 
 
     assert_eq!(300, {
-        match Parser::new(vec![0b1010_1100, 0b0000_0010]).parse_varint() {
+        match BasicParser::new(vec![0b1010_1100, 0b0000_0010]).parse_varint() {
             Ok(x) => x,
             Err(_) => u64::max_value()
         }
     });
 
-    assert!(Parser::new(vec![0xff, 0xff, 0xff, 0xff,
-                             0xff, 0xff, 0xff, 0x7f]).parse_varint().is_ok());
-    assert!(Parser::new(vec![0xff, 0xff, 0xff, 0xff,
-                             0xff, 0xff, 0xff, 0x80]).parse_varint().is_err());
+    assert!(BasicParser::new(vec![0xff, 0xff, 0xff, 0xff,
+                                  0xff, 0xff, 0xff, 0x7f]).parse_varint().is_ok());
+    assert!(BasicParser::new(vec![0xff, 0xff, 0xff, 0xff,
+                                  0xff, 0xff, 0xff, 0x80]).parse_varint().is_err());
 }
