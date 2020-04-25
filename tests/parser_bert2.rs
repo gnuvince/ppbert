@@ -1,5 +1,3 @@
-extern crate ppbert;
-
 use ppbert::parser;
 use ppbert::bertterm::BertTerm;
 use ppbert::error::Result;

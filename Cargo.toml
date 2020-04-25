@@ -5,6 +5,7 @@ homepage = "https://github.com/gnuvince/ppbert"
 version = "0.9.4"
 license = "MIT"
 authors = ["Vincent Foley <vfoley@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 num-bigint = "0.2"

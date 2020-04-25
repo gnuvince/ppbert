@@ -1,14 +1,11 @@
-extern crate itoa;
-extern crate ryu;
-
 use std::io;
 use std::iter;
 
 use byteorder::{BigEndian, WriteBytesExt};
 use num_bigint::{BigInt, Sign};
 
-use consts::*;
-use error::Result;
+use crate::consts::*;
+use crate::error::Result;
 
 /// A enum representing a BertTerm
 #[derive(Debug, PartialEq)]

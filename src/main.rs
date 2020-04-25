@@ -1,6 +1,3 @@
-extern crate getopts;
-extern crate ppbert;
-
 use std::env;
 use std::fs;
 use std::io::{self, ErrorKind, Read, Write, BufWriter};
