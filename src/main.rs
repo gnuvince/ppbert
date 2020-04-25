@@ -9,7 +9,7 @@ use getopts::Options;
 use ppbert::bertterm::BertTerm;
 use ppbert::consts::VERSION;
 use ppbert::error::{BertError, Result};
-use ppbert::parser;
+use ppbert::parsers::*;
 
 const PROG_NAME: &str = "ppbert";
 
@@ -68,13 +68,13 @@ fn main() {
     let transform_proplists = matches.opt_present("transform-proplists");
     let verbose = matches.opt_present("verbose");
 
-    let parse_fn =
+    let mut parser: Box<dyn Parser> =
         if matches.opt_present("bert2") {
-            parser::BasicParser::bert2_next
+            Box::new(Bert2Parser::new())
         } else if matches.opt_present("disk-log") {
-            parser::BasicParser::disk_log_next
+            Box::new(DiskLogParser::new())
         } else {
-            parser::BasicParser::bert_next
+            Box::new(Bert1Parser::new())
         };
     let output_fn = match (json, transform_proplists) {
         (true, false)  => pp_json,
@@ -90,7 +90,7 @@ fn main() {
     for file in &matches.free {
         let res = handle_file(file, parse_only, verbose,
                               indent_width, max_per_line,
-                              parse_fn, output_fn);
+                              &mut parser, output_fn);
         match res {
             Ok(()) => (),
             Err(ref e) => {
@@ -103,7 +103,6 @@ fn main() {
         }
     }
     exit(return_code);
-
 }
 
 
@@ -134,7 +133,7 @@ fn handle_file(
     verbose: bool,
     indent: usize,
     terms_per_line: usize,
-    parse_fn: fn(&mut parser::BasicParser) -> Option<Result<BertTerm>>,
+    parser: &mut Box<dyn Parser>,
     pp_fn: fn(BertTerm, usize, usize) -> Result<()>
 ) -> Result<()> {
 
@@ -144,13 +143,13 @@ fn handle_file(
     let read_dur = now.elapsed();
 
 
-    let mut parser = parser::BasicParser::new(buf);
+    parser.set_input(buf);
     let mut parse_dur = Duration::new(0, 0);
     let mut pp_dur = Duration::new(0, 0);
 
     loop {
         let now = Instant::now();
-        let next_item = parse_fn(&mut parser);
+        let next_item = parser.next();
         parse_dur += now.elapsed();
 
         match next_item {

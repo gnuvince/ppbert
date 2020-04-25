@@ -11,86 +11,6 @@ use crate::consts::*;
 use crate::error::{Result, BertError};
 
 
-pub trait Parser {
-    fn next(&mut self) -> Option<Result<BertTerm>>;
-}
-
-
-pub struct Bert1Parser {
-    basic_parser: BasicParser
-}
-
-impl Bert1Parser {
-    pub fn new(contents: Vec<u8>) -> Self {
-        Bert1Parser {
-            basic_parser: BasicParser::new(contents)
-        }
-    }
-}
-
-impl Parser for Bert1Parser {
-    fn next(&mut self) -> Option<Result<BertTerm>> {
-        if self.basic_parser.eof() {
-            return None;
-        }
-        let result =
-            self.basic_parser.magic_number()
-            .and_then(|_| self.basic_parser.bert_term());
-        return Some(result);
-    }
-}
-
-
-pub struct Bert2Parser {
-    basic_parser: BasicParser
-}
-
-impl Bert2Parser {
-    pub fn new(contents: Vec<u8>) -> Self {
-        Bert2Parser {
-            basic_parser: BasicParser::new(contents)
-        }
-    }
-}
-
-impl Parser for Bert2Parser {
-    fn next(&mut self) -> Option<Result<BertTerm>> {
-        if self.basic_parser.eof() {
-            return None;
-        }
-        let result =
-            self.basic_parser.parse_varint()
-            .and_then(|_| self.basic_parser.magic_number())
-            .and_then(|_| self.basic_parser.bert_term());
-        return Some(result);
-    }
-}
-
-pub struct DiskLogParser {
-    basic_parser: BasicParser
-}
-
-impl DiskLogParser {
-    pub fn new(contents: Vec<u8>) -> Self {
-        DiskLogParser {
-            basic_parser: BasicParser::new(contents)
-        }
-    }
-}
-
-impl Parser for DiskLogParser {
-    fn next(&mut self) -> Option<Result<BertTerm>> {
-        if self.basic_parser.eof() {
-            return None;
-        }
-        let result =
-            self.basic_parser.disk_log_magic()
-            .and_then(|_| self.basic_parser.disk_log_opened_status())
-            .and_then(|_| self.basic_parser.disk_log_term());
-        return Some(result);
-    }
-}
-
 #[derive(Debug)]
 pub struct BasicParser {
     contents: Vec<u8>,
@@ -102,41 +22,8 @@ impl BasicParser {
         BasicParser { contents: contents, pos: 0 }
     }
 
-    pub fn bert_next(&mut self) -> Option<Result<BertTerm>> {
-        if self.eof() {
-            return None;
-        }
-        let result =
-            self.magic_number()
-            .and_then(|_| self.bert_term());
-        return Some(result);
-    }
-
-    pub fn bert2_next(&mut self) -> Option<Result<BertTerm>> {
-        if self.eof() {
-            return None;
-        }
-        let result =
-            self.parse_varint()
-            .and_then(|_| self.magic_number())
-            .and_then(|_| self.bert_term());
-        return Some(result);
-    }
-
-    pub fn disk_log_next(&mut self) -> Option<Result<BertTerm>> {
-        if self.eof() {
-            return None;
-        }
-        let result =
-            self.disk_log_magic()
-            .and_then(|_| self.disk_log_opened_status())
-            .and_then(|_| self.disk_log_term());
-        return Some(result);
-    }
-
-
     // Parsers
-    fn magic_number(&mut self) -> Result<()> {
+    pub fn magic_number(&mut self) -> Result<()> {
         let initial_pos = self.pos;
         let magic = self.eat_u8()?;
         if magic != BERT_MAGIC_NUMBER {
@@ -145,7 +32,7 @@ impl BasicParser {
         return Ok(());
     }
 
-    fn disk_log_magic(&mut self) -> Result<()> {
+    pub fn disk_log_magic(&mut self) -> Result<()> {
         let initial_pos = self.pos;
         let magic = self.eat_u32_be()?;
         if magic != DISK_LOG_MAGIC {
@@ -154,7 +41,7 @@ impl BasicParser {
         return Ok(());
     }
 
-    fn disk_log_opened_status(&mut self) -> Result<()> {
+    pub fn disk_log_opened_status(&mut self) -> Result<()> {
         let initial_pos = self.pos;
         let status = self.eat_u32_be()?;
         if status != DISK_LOG_OPENED && status != DISK_LOG_CLOSED {
@@ -163,7 +50,7 @@ impl BasicParser {
         return Ok(());
     }
 
-    fn disk_log_term(&mut self) -> Result<BertTerm> {
+    pub fn disk_log_term(&mut self) -> Result<BertTerm> {
         // XXX(vfoley): should we check that the correct length was read?
         let _len_offset = self.pos;
         let _len = self.eat_u32_be()?;
@@ -183,7 +70,7 @@ impl BasicParser {
         return self.bert_term();
     }
 
-    fn bert_term(&mut self) -> Result<BertTerm> {
+    pub fn bert_term(&mut self) -> Result<BertTerm> {
         let initial_pos = self.pos;
         match self.eat_u8()? {
             SMALL_INTEGER_EXT => { self.small_integer() }
@@ -233,17 +120,17 @@ impl BasicParser {
         }
     }
 
-    fn small_integer(&mut self) -> Result<BertTerm> {
+    pub fn small_integer(&mut self) -> Result<BertTerm> {
         let b = self.eat_u8()?;
         Ok(BertTerm::Int(b as i32))
     }
 
-    fn integer(&mut self) -> Result<BertTerm> {
+    pub fn integer(&mut self) -> Result<BertTerm> {
         let n = self.eat_i32_be()?;
         Ok(BertTerm::Int(n))
     }
 
-    fn old_float(&mut self) -> Result<BertTerm> {
+    pub fn old_float(&mut self) -> Result<BertTerm> {
         let initial_pos = self.pos;
         let mut s = String::new();
         while !self.eof() && self.peek()? != 0 {
@@ -259,13 +146,13 @@ impl BasicParser {
             .map(|f| BertTerm::Float(f))
     }
 
-    fn new_float(&mut self) -> Result<BertTerm> {
+    pub fn new_float(&mut self) -> Result<BertTerm> {
         let raw_bytes = self.eat_u64_be()?;
         let f: f64 = f64::from_bits(raw_bytes);
         Ok(BertTerm::Float(f))
     }
 
-    fn atom(&mut self, len: usize) -> Result<BertTerm> {
+    pub fn atom(&mut self, len: usize) -> Result<BertTerm> {
         let initial_pos = self.pos;
         let bytes: Vec<u8> = self.eat_slice(len)?.to_owned();
         let is_ascii = bytes.iter().all(|byte| *byte < 128);
@@ -287,7 +174,7 @@ impl BasicParser {
         }
     }
 
-    fn atom_utf8(&mut self, len: usize) -> Result<BertTerm> {
+    pub fn atom_utf8(&mut self, len: usize) -> Result<BertTerm> {
         let initial_pos = self.pos;
         let buf: Vec<u8> = self.eat_slice(len)?.to_owned();
         String::from_utf8(buf)
@@ -295,7 +182,7 @@ impl BasicParser {
             .map_err(|_| BertError::InvalidUTF8Atom(initial_pos))
     }
 
-    fn tuple(&mut self, len: usize) -> Result<BertTerm> {
+    pub fn tuple(&mut self, len: usize) -> Result<BertTerm> {
         let mut terms = Vec::with_capacity(len);
         for _ in 0 .. len {
             terms.push(self.bert_term()?);
@@ -303,19 +190,19 @@ impl BasicParser {
         Ok(BertTerm::Tuple(terms))
     }
 
-    fn string(&mut self) -> Result<BertTerm> {
+    pub fn string(&mut self) -> Result<BertTerm> {
         let len = self.eat_u16_be()? as usize;
         let bytes: Vec<u8> = self.eat_slice(len)?.to_owned();
         Ok(BertTerm::String(bytes))
     }
 
-    fn binary(&mut self) -> Result<BertTerm> {
+    pub fn binary(&mut self) -> Result<BertTerm> {
         let len = self.eat_u32_be()? as usize;
         let bytes: Vec<u8> = self.eat_slice(len)?.to_owned();
         Ok(BertTerm::Binary(bytes))
     }
 
-    fn list(&mut self) -> Result<BertTerm> {
+    pub fn list(&mut self) -> Result<BertTerm> {
         let len = self.eat_u32_be()?;
         let mut terms = Vec::with_capacity(len as usize + 1);
         for _ in 0 .. len {
@@ -329,7 +216,7 @@ impl BasicParser {
         Ok(BertTerm::List(terms))
     }
 
-    fn bigint(&mut self, len: usize) -> Result<BertTerm> {
+    pub fn bigint(&mut self, len: usize) -> Result<BertTerm> {
         let sign = self.eat_u8()?;
         let mut sum: BigInt = Zero::zero();
         let mut pos: BigInt = One::one();
@@ -346,7 +233,7 @@ impl BasicParser {
     }
 
     // TODO(vfoley): ensure no duplicate keys
-    fn map(&mut self) -> Result<BertTerm> {
+    pub fn map(&mut self) -> Result<BertTerm> {
         let len = self.eat_u32_be()? as usize;
         let mut keys = Vec::with_capacity(len);
         let mut vals = Vec::with_capacity(len);
@@ -358,11 +245,11 @@ impl BasicParser {
     }
 
     // Low-level parsing methods
-    fn eof(&self) -> bool {
+    pub fn eof(&self) -> bool {
         self.pos >= self.contents.len()
     }
 
-    fn peek(&self) -> Result<u8> {
+    pub fn peek(&self) -> Result<u8> {
         if self.eof() {
             return Err(BertError::NotEnoughData {
                 offset: self.pos,
@@ -374,11 +261,11 @@ impl BasicParser {
         }
     }
 
-    fn can_read(&self, n: usize) -> bool {
+    pub fn can_read(&self, n: usize) -> bool {
         (self.pos + n) <= self.contents.len()
     }
 
-    fn eat_slice(&mut self, len: usize) -> Result<&[u8]> {
+    pub fn eat_slice(&mut self, len: usize) -> Result<&[u8]> {
         if !self.can_read(len) {
             return Err(BertError::NotEnoughData {
                 offset: self.pos,
@@ -391,43 +278,43 @@ impl BasicParser {
         return Ok(slice);
     }
 
-    fn eat_u8(&mut self) -> Result<u8> {
+    pub fn eat_u8(&mut self) -> Result<u8> {
         let b = self.peek()?;
         self.pos += 1;
         return Ok(b);
     }
 
-    fn eat_char(&mut self) -> Result<char> {
+    pub fn eat_char(&mut self) -> Result<char> {
         let b = self.eat_u8()?;
         return Ok(b as char);
     }
 
-    fn eat_u16_be(&mut self) -> Result<u16> {
+    pub fn eat_u16_be(&mut self) -> Result<u16> {
         let mut bytes = self.eat_slice(2)?;
         let n = bytes.read_u16::<BigEndian>()?;
         return Ok(n);
     }
 
-    fn eat_i32_be(&mut self) -> Result<i32> {
+    pub fn eat_i32_be(&mut self) -> Result<i32> {
         let mut bytes = self.eat_slice(4)?;
         let n = bytes.read_i32::<BigEndian>()?;
         return Ok(n);
     }
 
-    fn eat_u32_be(&mut self) -> Result<u32> {
+    pub fn eat_u32_be(&mut self) -> Result<u32> {
         let mut bytes = self.eat_slice(4)?;
         let n = bytes.read_u32::<BigEndian>()?;
         return Ok(n);
     }
 
-    fn eat_u64_be(&mut self) -> Result<u64> {
+    pub fn eat_u64_be(&mut self) -> Result<u64> {
         let mut bytes = self.eat_slice(8)?;
         let n = bytes.read_u64::<BigEndian>()?;
         return Ok(n);
     }
 
     // https://developers.google.com/protocol-buffers/docs/encoding#varints
-    fn parse_varint(&mut self) -> Result<u64> {
+    pub fn parse_varint(&mut self) -> Result<u64> {
         const MAX_LEN: u64 = 8;
         let start_pos = self.pos;
         let mut i: u64 = 0;
