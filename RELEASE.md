@@ -1,3 +1,7 @@
+0.10.0
+======
+  - INTERFACE: Use file extension to decide which parser to use
+
 0.9.4
 =====
   - INTERNALS: fix warnings about Error::description() starting from Rust 1.42.0
