@@ -1,6 +1,7 @@
 use std::env;
 use std::fs;
 use std::io::{self, ErrorKind, Read, Write, BufWriter};
+use std::path::Path;
 use std::process::exit;
 use std::time::{Duration, Instant};
 
@@ -12,6 +13,14 @@ use ppbert::error::{BertError, Result};
 use ppbert::parsers::*;
 
 const PROG_NAME: &str = "ppbert";
+
+#[derive(Clone, Copy)]
+enum ParserChoice {
+    ByExtension,
+    ForceBert1,
+    ForceBert2,
+    ForceDiskLog,
+}
 
 fn opt_usize(m: &getopts::Matches, opt: &str, default: usize) -> usize {
     match m.opt_get_default(opt, default) {
@@ -31,8 +40,9 @@ fn main() {
     opts.optopt("i", "indent", "indent with NUM spaces", "NUM");
     opts.optopt("m", "per-line", "print at most NUM basic terms per line", "NUM");
     opts.optflag("p", "parse", "parse only, not pretty print");
-    opts.optflag("2", "bert2", "parse .bert2 files");
-    opts.optflag("d", "disk-log", "parse disk_log files");
+    opts.optflag("1", "bert1", "force ppbert to use regular BERT parser");
+    opts.optflag("2", "bert2", "force ppbert to use BERT2 parser");
+    opts.optflag("d", "disk-log", "force ppbert to use DiskLog parser");
     opts.optflag("v", "verbose", "show diagnostics on stderr");
     opts.optflag("j", "json", "print as JSON");
     opts.optflag("t", "transform-proplists", "convert proplists to JSON objects");
@@ -68,14 +78,17 @@ fn main() {
     let transform_proplists = matches.opt_present("transform-proplists");
     let verbose = matches.opt_present("verbose");
 
-    let mut parser: Box<dyn Parser> =
-        if matches.opt_present("bert2") {
-            Box::new(Bert2Parser::new())
+    let parser_choice =
+        if matches.opt_present("bert1") {
+            ParserChoice::ForceBert1
+        } else if matches.opt_present("bert2") {
+            ParserChoice::ForceBert2
         } else if matches.opt_present("disk-log") {
-            Box::new(DiskLogParser::new())
+            ParserChoice::ForceDiskLog
         } else {
-            Box::new(Bert1Parser::new())
+            ParserChoice::ByExtension
         };
+
     let output_fn = match (json, transform_proplists) {
         (true, false)  => pp_json,
         (true, true)   => pp_json_proplist,
@@ -90,7 +103,7 @@ fn main() {
     for file in &matches.free {
         let res = handle_file(file, parse_only, verbose,
                               indent_width, max_per_line,
-                              &mut parser, output_fn);
+                              parser_choice, output_fn);
         match res {
             Ok(()) => (),
             Err(ref e) => {
@@ -127,13 +140,30 @@ fn read_bytes(filename: &str) -> Result<Vec<u8>> {
     }
 }
 
+fn parser_from_ext(filename: &str) -> Box<dyn Parser> {
+    let ext: Option<&str> =
+        Path::new(filename)
+        .extension()
+        .and_then(|x| x.to_str());
+    match ext {
+        Some("bert") | Some("bert1") => Box::new(Bert1Parser::new()),
+        Some("bert2") => Box::new(Bert2Parser::new()),
+        Some("log") => Box::new(DiskLogParser::new()),
+        _ => {
+            eprintln!("{}: cannot find an appropriate parser for {}; using BERT",
+                      PROG_NAME, filename);
+            Box::new(Bert1Parser::new())
+        },
+    }
+}
+
 fn handle_file(
     filename: &str,
     parse_only: bool,
     verbose: bool,
     indent: usize,
     terms_per_line: usize,
-    parser: &mut Box<dyn Parser>,
+    parser_choice: ParserChoice,
     pp_fn: fn(BertTerm, usize, usize) -> Result<()>
 ) -> Result<()> {
 
@@ -142,6 +172,12 @@ fn handle_file(
     let buf = read_bytes(filename)?;
     let read_dur = now.elapsed();
 
+    let mut parser: Box<dyn Parser> = match parser_choice {
+        ParserChoice::ForceBert1 => Box::new(Bert1Parser::new()),
+        ParserChoice::ForceBert2 => Box::new(Bert2Parser::new()),
+        ParserChoice::ForceDiskLog => Box::new(DiskLogParser::new()),
+        ParserChoice::ByExtension => parser_from_ext(filename),
+    };
 
     parser.set_input(buf);
     let mut parse_dur = Duration::new(0, 0);
