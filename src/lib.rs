@@ -2,6 +2,7 @@ pub mod error;
 pub mod consts;
 pub mod bertterm;
 pub mod parsers;
+pub mod pp;
 
 pub mod prelude {
     pub use crate::consts::*;
