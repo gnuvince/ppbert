@@ -3,8 +3,7 @@ use ppbert::bertterm::BertTerm;
 use ppbert::error::Result;
 
 fn p(bytes: &[u8]) -> Result<Vec<BertTerm>> {
-    let mut parser = Bert2Parser::new();
-    parser.set_input(bytes.to_vec());
+    let mut parser = Bert2Parser::new(bytes.to_vec());
     let mut terms = Vec::new();
     while let Some(res) = parser.next() {
         terms.push(res?);

@@ -5,8 +5,7 @@ use ppbert::bertterm::BertTerm;
 use ppbert::error::{BertError, Result};
 
 fn p(bytes: &[u8]) -> Result<BertTerm> {
-    let mut parser = Bert1Parser::new();
-    parser.set_input(bytes.to_vec());
+    let mut parser = Bert1Parser::new(bytes.to_vec());
     let res = parser.next().unwrap();
     return res;
 }

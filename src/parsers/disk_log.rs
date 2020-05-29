@@ -8,18 +8,14 @@ pub struct DiskLogParser {
 }
 
 impl DiskLogParser {
-    pub fn new() -> Self {
-        DiskLogParser {
-            basic_parser: BasicParser::new(vec![])
+    pub fn new(bytes: Vec<u8>) -> Self {
+        Self {
+            basic_parser: BasicParser::new(bytes),
         }
     }
 }
 
 impl Parser for DiskLogParser {
-    fn set_input(&mut self, bytes: Vec<u8>) {
-        self.basic_parser = BasicParser::new(bytes);
-    }
-
     fn next(&mut self) -> Option<Result<BertTerm>> {
         if self.basic_parser.eof() {
             return None;

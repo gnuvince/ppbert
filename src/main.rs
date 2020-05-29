@@ -140,19 +140,19 @@ fn read_bytes(filename: &str) -> Result<Vec<u8>> {
     }
 }
 
-fn parser_from_ext(filename: &str) -> Box<dyn Parser> {
+fn parser_from_ext(filename: &str, bytes: Vec<u8>) -> Box<dyn Parser> {
     let ext: Option<&str> =
         Path::new(filename)
         .extension()
         .and_then(|x| x.to_str());
     match ext {
-        Some("bert") | Some("bert1") => Box::new(Bert1Parser::new()),
-        Some("bert2") => Box::new(Bert2Parser::new()),
-        Some("log") => Box::new(DiskLogParser::new()),
+        Some("bert") | Some("bert1") => Box::new(Bert1Parser::new(bytes)),
+        Some("bert2") => Box::new(Bert2Parser::new(bytes)),
+        Some("log") => Box::new(DiskLogParser::new(bytes)),
         _ => {
             eprintln!("{}: cannot find an appropriate parser for {}; using BERT",
                       PROG_NAME, filename);
-            Box::new(Bert1Parser::new())
+            Box::new(Bert1Parser::new(bytes))
         },
     }
 }
@@ -169,17 +169,16 @@ fn handle_file(
 
     // Read file or stdin into buffer
     let now = Instant::now();
-    let buf = read_bytes(filename)?;
+    let bytes = read_bytes(filename)?;
     let read_dur = now.elapsed();
 
     let mut parser: Box<dyn Parser> = match parser_choice {
-        ParserChoice::ForceBert1 => Box::new(Bert1Parser::new()),
-        ParserChoice::ForceBert2 => Box::new(Bert2Parser::new()),
-        ParserChoice::ForceDiskLog => Box::new(DiskLogParser::new()),
-        ParserChoice::ByExtension => parser_from_ext(filename),
+        ParserChoice::ForceBert1 => Box::new(Bert1Parser::new(bytes)),
+        ParserChoice::ForceBert2 => Box::new(Bert2Parser::new(bytes)),
+        ParserChoice::ForceDiskLog => Box::new(DiskLogParser::new(bytes)),
+        ParserChoice::ByExtension => parser_from_ext(filename, bytes),
     };
 
-    parser.set_input(buf);
     let mut parse_dur = Duration::new(0, 0);
     let mut pp_dur = Duration::new(0, 0);
 

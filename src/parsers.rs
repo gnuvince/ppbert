@@ -11,6 +11,5 @@ use crate::bertterm::BertTerm;
 use crate::error::Result;
 
 pub trait Parser {
-    fn set_input(&mut self, bytes: Vec<u8>);
     fn next(&mut self) -> Option<Result<BertTerm>>;
 }
