@@ -1,8 +1,7 @@
 use num_bigint::ToBigInt;
 
+use ppbert::prelude::*;
 use ppbert::parsers::*;
-use ppbert::bertterm::BertTerm;
-use ppbert::error::{BertError, Result};
 
 fn p(bytes: &[u8]) -> Result<BertTerm> {
     let mut parser = Bert1Parser::new(bytes.to_vec());

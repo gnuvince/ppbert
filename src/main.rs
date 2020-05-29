@@ -7,9 +7,7 @@ use std::time::{Duration, Instant};
 
 use getopts::Options;
 
-use ppbert::bertterm::BertTerm;
-use ppbert::consts::VERSION;
-use ppbert::error::{BertError, Result};
+use ppbert::prelude::*;
 use ppbert::parsers::*;
 
 const PROG_NAME: &str = "ppbert";

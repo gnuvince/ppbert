@@ -4,8 +4,7 @@ use std::iter;
 use byteorder::{BigEndian, WriteBytesExt};
 use num_bigint::{BigInt, Sign};
 
-use crate::consts::*;
-use crate::error::Result;
+use crate::prelude::*;
 
 /// A enum representing a BertTerm
 #[derive(Debug, PartialEq)]

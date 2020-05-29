@@ -1,6 +1,5 @@
+use ppbert::prelude::*;
 use ppbert::parsers::*;
-use ppbert::bertterm::BertTerm;
-use ppbert::error::Result;
 
 fn p(bytes: &[u8]) -> Result<Vec<BertTerm>> {
     let mut parser = Bert2Parser::new(bytes.to_vec());

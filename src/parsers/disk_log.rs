@@ -1,7 +1,5 @@
-use crate::bertterm::BertTerm;
-use crate::error::Result;
-use crate::parsers::Parser;
-use crate::parsers::basic::BasicParser;
+use crate::prelude::*;
+use crate::parsers::*;
 
 pub struct DiskLogParser {
     basic_parser: BasicParser

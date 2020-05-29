@@ -6,10 +6,7 @@ use byteorder::{ReadBytesExt, BigEndian};
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_1;
 
-use crate::bertterm::BertTerm;
-use crate::consts::*;
-use crate::error::{Result, BertError};
-
+use crate::prelude::*;
 
 #[derive(Debug)]
 pub struct BasicParser {
