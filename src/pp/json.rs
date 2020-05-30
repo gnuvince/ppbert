@@ -1,19 +1,22 @@
 use std::io;
 
 use crate::prelude::*;
+use crate::pp::PrettyPrinter;
 use crate::pp::utils::*;
 
 pub struct JsonPrettyPrinter {
     transform_proplists: bool
 }
 
+impl PrettyPrinter for JsonPrettyPrinter {
+    fn write(&self, term: &BertTerm, mut w: Box<dyn io::Write>) -> Result<()> {
+        self.write_term(term, &mut w).map_err(|e| e.into())
+    }
+}
+
 impl JsonPrettyPrinter {
     pub fn new(transform_proplists: bool) -> Self {
         JsonPrettyPrinter { transform_proplists }
-    }
-
-    pub fn write<W: io::Write>(&self, term: &BertTerm, w: &mut W) -> Result<()> {
-        self.write_term(term, w).map_err(|e| e.into())
     }
 
     fn write_term<W: io::Write>(&self, term: &BertTerm, w: &mut W) -> io::Result<()> {

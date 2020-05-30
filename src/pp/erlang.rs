@@ -2,11 +2,18 @@ use std::io;
 use std::iter;
 
 use crate::prelude::*;
+use crate::pp::PrettyPrinter;
 use crate::pp::utils::*;
 
 pub struct ErlangPrettyPrinter {
     indent_width: usize,
     max_terms_per_line: usize
+}
+
+impl PrettyPrinter for ErlangPrettyPrinter {
+    fn write(&self, term: &BertTerm, mut w: Box<dyn io::Write>) -> Result<()> {
+        self.write_term(term, &mut w, 0).map_err(|e| e.into())
+    }
 }
 
 impl ErlangPrettyPrinter {
@@ -16,10 +23,6 @@ impl ErlangPrettyPrinter {
     /// integers, floats, strings) can be printed per line.
     pub fn new(indent_width: usize, max_terms_per_line: usize) -> Self {
         ErlangPrettyPrinter { indent_width, max_terms_per_line }
-    }
-
-    pub fn write<W: io::Write>(&self, term: &BertTerm, w: &mut W) -> Result<()> {
-        self.write_term(term, w, 0).map_err(|e| e.into())
     }
 
     fn write_term<W: io::Write>(&self, term: &BertTerm, w: &mut W, depth: usize) -> io::Result<()> {

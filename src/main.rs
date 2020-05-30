@@ -1,6 +1,6 @@
 use std::env;
 use std::fs;
-use std::io::{self, ErrorKind, Read, Write, BufWriter};
+use std::io::{self, ErrorKind, Read, BufWriter};
 use std::path::Path;
 use std::process::exit;
 use std::time::{Duration, Instant};
@@ -9,6 +9,7 @@ use getopts::Options;
 
 use ppbert::prelude::*;
 use ppbert::parsers::*;
+use ppbert::pp::*;
 
 const PROG_NAME: &str = "ppbert";
 
@@ -87,21 +88,20 @@ fn main() {
             ParserChoice::ByExtension
         };
 
-    let output_fn = match (json, transform_proplists) {
-        (true, false)  => pp_json,
-        (true, true)   => pp_json_proplist,
-        (false, false) => pp_bert,
+    let mut return_code = 0;
+    for file in &matches.free {
+
+    let pp: Box<dyn PrettyPrinter> = match (json, transform_proplists) {
+        (true, false)  => Box::new(JsonPrettyPrinter::new(false)),
+        (true, true)   => Box::new(JsonPrettyPrinter::new(true)),
+        (false, false) => Box::new(ErlangPrettyPrinter::new(indent_width, max_per_line)),
         (false, true)  => {
             eprintln!("{}: --transform-proplists is only valid with the --json flag", PROG_NAME);
-            pp_bert
+            Box::new(ErlangPrettyPrinter::new(indent_width, max_per_line))
         }
     };
 
-    let mut return_code = 0;
-    for file in &matches.free {
-        let res = handle_file(file, parse_only, verbose,
-                              indent_width, max_per_line,
-                              parser_choice, output_fn);
+        let res = handle_file(file, parse_only, verbose, parser_choice, pp);
         match res {
             Ok(()) => (),
             Err(ref e) => {
@@ -159,12 +159,9 @@ fn handle_file(
     filename: &str,
     parse_only: bool,
     verbose: bool,
-    indent: usize,
-    terms_per_line: usize,
     parser_choice: ParserChoice,
-    pp_fn: fn(BertTerm, usize, usize) -> Result<()>
+    pp: Box<dyn PrettyPrinter>,
 ) -> Result<()> {
-
     // Read file or stdin into buffer
     let now = Instant::now();
     let bytes = read_bytes(filename)?;
@@ -189,7 +186,8 @@ fn handle_file(
         parse_dur += now.elapsed();
         if !parse_only {
             let now = Instant::now();
-            pp_fn(term, indent, terms_per_line)?;
+            let stdout = BufWriter::new(io::stdout());
+            pp.write(&term, Box::new(stdout))?;
             pp_dur += now.elapsed();
         }
     }
@@ -202,40 +200,5 @@ fn handle_file(
         }
     }
 
-    return Ok(());
-}
-
-
-/// Outputs a BertTerm to stdout.
-fn pp_bert(term: BertTerm, indent_width: usize, terms_per_line: usize) -> Result<()> {
-    let stdout = io::stdout();
-    let stdout = stdout.lock();
-    let mut stdout = BufWriter::new(stdout);
-    term.write_as_erlang(&mut stdout, indent_width, terms_per_line)?;
-    stdout.flush()?;
-    writeln!(&mut stdout, "")?;
-    return Ok(());
-}
-
-/// Outputs a BertTerm as JSON to stdout.
-fn pp_json(term: BertTerm, _: usize, _: usize) -> Result<()> {
-    let stdout = io::stdout();
-    let stdout = stdout.lock();
-    let mut stdout = BufWriter::new(stdout);
-    term.write_as_json(&mut stdout, false)?;
-    writeln!(&mut stdout, "")?;
-    stdout.flush()?;
-    return Ok(());
-}
-
-/// Outputs a BertTerm as JSON to stdout;
-/// Erlang proplists are converted to JSON objects.
-fn pp_json_proplist(term: BertTerm, _: usize, _: usize) -> Result<()> {
-    let stdout = io::stdout();
-    let stdout = stdout.lock();
-    let mut stdout = BufWriter::new(stdout);
-    term.write_as_json(&mut stdout, true)?;
-    writeln!(&mut stdout, "")?;
-    stdout.flush()?;
     return Ok(());
 }

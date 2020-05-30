@@ -4,18 +4,21 @@ use byteorder::{BigEndian, WriteBytesExt};
 use num_bigint::{Sign};
 
 use crate::prelude::*;
+use crate::pp::PrettyPrinter;
 
 pub struct BertWriter;
+
+impl PrettyPrinter for BertWriter {
+    fn write(&self, term: &BertTerm, mut w: Box<dyn io::Write>) -> Result<()> {
+        w.write_u8(BERT_MAGIC_NUMBER)?;
+        self.write_bert(term, &mut w)?;
+        return Ok(());
+    }
+}
 
 impl BertWriter {
     pub fn new() -> Self {
         BertWriter { }
-    }
-
-    pub fn write<W: io::Write>(&self, term: &BertTerm, w: &mut W) -> Result<()> {
-        w.write_u8(BERT_MAGIC_NUMBER)?;
-        self.write_bert(term, w)?;
-        return Ok(());
     }
 
     fn write_bert<W: io::Write>(&self, term: &BertTerm, w: &mut W) -> io::Result<()> {
