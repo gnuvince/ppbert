@@ -10,7 +10,9 @@ pub struct JsonPrettyPrinter {
 
 impl PrettyPrinter for JsonPrettyPrinter {
     fn write(&self, term: &BertTerm, mut w: Box<dyn io::Write>) -> Result<()> {
-        self.write_term(term, &mut w).map_err(|e| e.into())
+        self.write_term(term, &mut w)?;
+        writeln!(w, "")?;
+        return Ok(());
     }
 }
 

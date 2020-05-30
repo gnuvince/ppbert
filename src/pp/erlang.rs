@@ -12,7 +12,9 @@ pub struct ErlangPrettyPrinter {
 
 impl PrettyPrinter for ErlangPrettyPrinter {
     fn write(&self, term: &BertTerm, mut w: Box<dyn io::Write>) -> Result<()> {
-        self.write_term(term, &mut w, 0).map_err(|e| e.into())
+        self.write_term(term, &mut w, 0)?;
+        writeln!(w, "")?;
+        return Ok(());
     }
 }
 
