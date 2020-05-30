@@ -182,19 +182,15 @@ fn handle_file(
 
     loop {
         let now = Instant::now();
-        let next_item = parser.next();
+        let term = match parser.next() {
+            Some(term) => term?,
+            None => break,
+        };
         parse_dur += now.elapsed();
-
-        match next_item {
-            None => { break; }
-            Some(Err(e)) => { return Err(e); }
-            Some(Ok(t)) => {
-                if !parse_only {
-                    let now = Instant::now();
-                    pp_fn(t, indent, terms_per_line)?;
-                    pp_dur += now.elapsed();
-                }
-            }
+        if !parse_only {
+            let now = Instant::now();
+            pp_fn(term, indent, terms_per_line)?;
+            pp_dur += now.elapsed();
         }
     }
 
