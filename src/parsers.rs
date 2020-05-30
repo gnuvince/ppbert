@@ -10,6 +10,4 @@ pub use disk_log::DiskLogParser;
 
 use crate::prelude::*;
 
-pub trait Parser {
-    fn next(&mut self) -> Option<Result<BertTerm>>;
-}
+pub type Parser = dyn Iterator<Item = Result<BertTerm>>;

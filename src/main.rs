@@ -138,7 +138,7 @@ fn read_bytes(filename: &str) -> Result<Vec<u8>> {
     }
 }
 
-fn parser_from_ext(filename: &str, bytes: Vec<u8>) -> Box<dyn Parser> {
+fn parser_from_ext(filename: &str, bytes: Vec<u8>) -> Box<Parser> {
     let ext: Option<&str> =
         Path::new(filename)
         .extension()
@@ -170,7 +170,7 @@ fn handle_file(
     let bytes = read_bytes(filename)?;
     let read_dur = now.elapsed();
 
-    let mut parser: Box<dyn Parser> = match parser_choice {
+    let mut parser: Box<Parser> = match parser_choice {
         ParserChoice::ForceBert1 => Box::new(Bert1Parser::new(bytes)),
         ParserChoice::ForceBert2 => Box::new(Bert2Parser::new(bytes)),
         ParserChoice::ForceDiskLog => Box::new(DiskLogParser::new(bytes)),

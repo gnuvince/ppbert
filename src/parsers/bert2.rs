@@ -13,8 +13,10 @@ impl Bert2Parser {
     }
 }
 
-impl Parser for Bert2Parser {
-    fn next(&mut self) -> Option<Result<BertTerm>> {
+impl Iterator for Bert2Parser {
+    type Item = Result<BertTerm>;
+
+    fn next(&mut self) -> Option<Self::Item> {
         if self.basic_parser.eof() {
             return None;
         }

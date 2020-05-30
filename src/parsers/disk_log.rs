@@ -13,8 +13,10 @@ impl DiskLogParser {
     }
 }
 
-impl Parser for DiskLogParser {
-    fn next(&mut self) -> Option<Result<BertTerm>> {
+impl Iterator for DiskLogParser {
+    type Item = Result<BertTerm>;
+
+    fn next(&mut self) -> Option<Self::Item> {
         if self.basic_parser.eof() {
             return None;
         }
