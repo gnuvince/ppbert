@@ -88,9 +88,6 @@ fn main() {
             ParserChoice::ByExtension
         };
 
-    let mut return_code = 0;
-    for file in &matches.free {
-
     let pp: Box<dyn PrettyPrinter> = match (json, transform_proplists) {
         (true, false)  => Box::new(JsonPrettyPrinter::new(false)),
         (true, true)   => Box::new(JsonPrettyPrinter::new(true)),
@@ -101,7 +98,9 @@ fn main() {
         }
     };
 
-        let res = handle_file(file, parse_only, verbose, parser_choice, pp);
+    let mut return_code = 0;
+    for file in &matches.free {
+        let res = handle_file(file, parse_only, verbose, parser_choice, &pp);
         match res {
             Ok(()) => (),
             Err(ref e) => {
@@ -160,7 +159,7 @@ fn handle_file(
     parse_only: bool,
     verbose: bool,
     parser_choice: ParserChoice,
-    pp: Box<dyn PrettyPrinter>,
+    pp: &Box<dyn PrettyPrinter>,
 ) -> Result<()> {
     // Read file or stdin into buffer
     let now = Instant::now();
