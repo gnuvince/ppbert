@@ -45,6 +45,7 @@ fn main() {
     opts.optflag("v", "verbose", "show diagnostics on stderr");
     opts.optflag("j", "json", "print as JSON");
     opts.optflag("t", "transform-proplists", "convert proplists to JSON objects");
+    opts.optflag("b", "as-bert", "print as BERT");
 
     let mut matches = match opts.parse(env::args().skip(1)) {
         Ok(m) => m,
@@ -74,6 +75,7 @@ fn main() {
     let max_per_line = opt_usize(&matches, "per-line", 6);
     let parse_only = matches.opt_present("parse");
     let json = matches.opt_present("json");
+    let as_bert = matches.opt_present("as-bert");
     let transform_proplists = matches.opt_present("transform-proplists");
     let verbose = matches.opt_present("verbose");
 
@@ -88,15 +90,14 @@ fn main() {
             ParserChoice::ByExtension
         };
 
-    let pp: Box<dyn PrettyPrinter> = match (json, transform_proplists) {
-        (true, false)  => Box::new(JsonPrettyPrinter::new(false)),
-        (true, true)   => Box::new(JsonPrettyPrinter::new(true)),
-        (false, false) => Box::new(ErlangPrettyPrinter::new(indent_width, max_per_line)),
-        (false, true)  => {
-            eprintln!("{}: --transform-proplists is only valid with the --json flag", PROG_NAME);
+    let pp: Box<dyn PrettyPrinter> =
+        if json {
+            Box::new(JsonPrettyPrinter::new(transform_proplists))
+        } else if as_bert {
+            Box::new(BertWriter::new())
+        } else {
             Box::new(ErlangPrettyPrinter::new(indent_width, max_per_line))
-        }
-    };
+        };
 
     let mut return_code = 0;
     for file in &matches.free {
