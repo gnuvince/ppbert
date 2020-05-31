@@ -1,3 +1,19 @@
+0.11.0
+======
+  - INTERFACE: add `-b/--as-bert` flag to output back into BERT
+  - INTERFACE: in verbose mode, times are displayed in ns, µs, ms, and seconds instead of just seconds
+  - INTERNALS: add a `prelude` module to easily `use` the most common items
+  - INTERNALS: move parsers to their own modules
+  - INTERNALS: move pretty printers to their own modules
+  - INTERNALS: implement `Iterator` for parsers
+  - INTERNALS: add `PrettyPrinter` trait
+  - INTERNALS: improve error messages for invalid magic number and invalid disk log values
+  - INFRA: remove the build_musl.sh script
+  - PERF: the new PrettyPrinter with its `io::Write` trait object is sometimes faster,
+    sometimes slower than the previous parametrized pretty printers. Since the new
+    approach gives more flexibility at a modest performance cost, we'll accept this
+    performance regression.
+
 0.10.0
 ======
   - INTERFACE: Use file extension to decide which parser to use
