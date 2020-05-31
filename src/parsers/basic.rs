@@ -24,7 +24,10 @@ impl BasicParser {
         let initial_pos = self.pos;
         let magic = self.eat_u8()?;
         if magic != BERT_MAGIC_NUMBER {
-            return Err(BertError::InvalidMagicNumber(initial_pos));
+            return Err(BertError::InvalidMagicNumber {
+                offset: initial_pos,
+                actual: magic,
+            });
         }
         return Ok(());
     }
@@ -33,7 +36,10 @@ impl BasicParser {
         let initial_pos = self.pos;
         let magic = self.eat_u32_be()?;
         if magic != DISK_LOG_MAGIC {
-            return Err(BertError::InvalidMagicNumber(initial_pos));
+            return Err(BertError::InvalidDiskLogMagic {
+                offset: initial_pos,
+                actual: magic,
+            });
         }
         return Ok(());
     }
@@ -42,7 +48,10 @@ impl BasicParser {
         let initial_pos = self.pos;
         let status = self.eat_u32_be()?;
         if status != DISK_LOG_OPENED && status != DISK_LOG_CLOSED {
-            return Err(BertError::InvalidDiskLogOpenedStatus(initial_pos));
+            return Err(BertError::InvalidDiskLogOpenedStatus {
+                offset: initial_pos,
+                actual: status,
+            });
         }
         return Ok(());
     }
@@ -55,13 +64,19 @@ impl BasicParser {
         let magic_pos = self.pos;
         let magic = self.eat_u32_be()?;
         if magic != DISK_LOG_TERM_MAGIC {
-            return Err(BertError::InvalidMagicNumber(magic_pos));
+            return Err(BertError::InvalidDiskLogTermMagic {
+                offset: magic_pos,
+                actual: magic,
+            });
         }
 
         let magic_pos = self.pos;
         let magic = self.eat_u8()?;
         if magic != BERT_MAGIC_NUMBER {
-            return Err(BertError::InvalidMagicNumber(magic_pos));
+            return Err(BertError::InvalidMagicNumber {
+                offset: magic_pos,
+                actual: magic,
+            });
         }
 
         return self.bert_term();

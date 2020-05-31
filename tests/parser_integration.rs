@@ -14,7 +14,7 @@ fn magic_number() {
     assert!(p(&[131, 97, 0]).is_ok());
     assert!(p(&[130, 97, 0]).is_err());
     assert!(match p(&[130, 97, 0]) {
-        Err(BertError::InvalidMagicNumber(_)) => true,
+        Err(BertError::InvalidMagicNumber { .. }) => true,
         _ => false
     });
 }
