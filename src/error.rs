@@ -23,67 +23,37 @@ pub enum BertError {
     InvalidDiskLogOpenedStatus { offset: usize, actual: u32 },
 }
 
-impl BertError {
-    fn offset(&self) -> Option<usize> {
-        use self::BertError::*;
-        match *self {
-            InvalidMagicNumber { offset, .. }
-            | InvalidTag(offset, _)
-            | InvalidFloat(offset)
-            | InvalidUTF8Atom(offset)
-            | InvalidLatin1Atom(offset)
-            | VarintTooLarge(offset)
-            | InvalidDiskLogMagic { offset, .. }
-            | InvalidDiskLogTermMagic { offset, .. }
-            | InvalidDiskLogOpenedStatus { offset, .. }
-            | NotEnoughData { offset, .. } => Some(offset),
-            _ => None
-        }
-    }
-
-    fn extra_info(&self) -> Option<String> {
-        use self::BertError::*;
-        match *self {
-            InvalidTag(_, tag) => Some(format!("{}", tag)),
-            InvalidMagicNumber { actual, .. } =>
-                Some(format!("expected 0x{:02x}, found 0x{:02x}", BERT_MAGIC_NUMBER, actual)),
-            InvalidDiskLogMagic { actual, .. } =>
-                Some(format!("expected 0x{:08x}, found 0x{:08x}", DISK_LOG_MAGIC, actual)),
-            InvalidDiskLogTermMagic { actual, .. } =>
-                Some(format!("expected 0x{:08x}, found 0x{:08x}", DISK_LOG_TERM_MAGIC, actual)),
-            InvalidDiskLogOpenedStatus { actual, .. } =>
-                Some(format!("expected 0x{:08x}, found 0x{:08x}", DISK_LOG_OPENED, actual)),
-            NotEnoughData { needed, available, .. } =>
-                Some(format!("bytes needed: {}; bytes available: {}", needed, available)),
-            _ => None
-        }
-    }
-}
-
 impl fmt::Display for BertError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use self::BertError::*;
         match *self {
-            IoError(ref io_err) => write!(f, "{}", io_err)?,
-            InvalidMagicNumber { .. } => write!(f, "invalid magic number")?,
-            InvalidTag(_, _) => write!(f, "invalid tag")?,
-            InvalidFloat(_) => write!(f, "invalid float")?,
-            InvalidUTF8Atom(_) => write!(f, "UTF-8 atom is not correctly encoded")?,
-            InvalidLatin1Atom(_) => write!(f, "Latin-1 atom is not correctly encoded")?,
-            VarintTooLarge(_) => write!(f, "varint is too large (greater than 2^64-1)")?,
-            NotEnoughData { .. } => write!(f, "no enough data available")?,
-            InvalidDiskLogMagic { .. } => write!(f, "invalid disk_log magic")?,
-            InvalidDiskLogTermMagic { .. } => write!(f, "invalid file disk_log term magic")?,
-            InvalidDiskLogOpenedStatus { .. } => write!(f, "invalid file opened status")?,
-        }
-
-        match self.offset() {
-            Some(offset) => write!(f, " at offset {}", offset)?,
-            None => (),
-        }
-        match self.extra_info() {
-            Some(ref s) => write!(f, ": {}", s),
-            None => Ok(()),
+            IoError(ref io_err) =>
+                write!(f, "{}", io_err),
+            InvalidMagicNumber { offset, actual } =>
+                write!(f, "invalid magic number at offset {}: expected 0x{:02x}, found 0x{:02x}",
+                       offset, BERT_MAGIC_NUMBER, actual),
+            InvalidTag(offset, byte) =>
+                write!(f, "invalid tag at offset {}: 0x{:02x}", offset, byte),
+            InvalidFloat(offset) =>
+                write!(f, "invalid float at offset {}", offset),
+            InvalidUTF8Atom(offset) =>
+                write!(f, "UTF-8 atom is not correctly encoded at offset {}", offset),
+            InvalidLatin1Atom(offset) =>
+                write!(f, "Latin-1 atom is not correctly encoded at offset {}", offset),
+            VarintTooLarge(offset) =>
+                write!(f, "varint is too large (greater than 2^64-1) at offset {}", offset),
+            NotEnoughData { needed, available, offset } =>
+                write!(f, "no enough data available at offset {}: needed {} bytes, only {} remaining",
+                       offset, needed, available),
+            InvalidDiskLogMagic { offset, actual } =>
+                write!(f, "invalid disk_log magic at {}: expected 0x{:08x}, found 0x{:08x}",
+                       offset, DISK_LOG_MAGIC, actual),
+            InvalidDiskLogTermMagic { offset, actual } =>
+                write!(f, "invalid disk_log term magic at offset {}: expected 0x{:08x}, found 0x{:08x}",
+                       offset, DISK_LOG_TERM_MAGIC, actual),
+            InvalidDiskLogOpenedStatus { offset, actual } =>
+                write!(f, "invalid disk_log opened status at offset {}: expected 0x{:08x}, found 0x{:08x}",
+                       offset, DISK_LOG_OPENED, actual),
         }
     }
 }
