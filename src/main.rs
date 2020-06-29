@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use getopts::Options;
 
 use ppbert::prelude::*;
-use ppbert::parsers::*;
+use ppbert::parser::*;
 use ppbert::pp::*;
 
 const PROG_NAME: &str = "ppbert";
@@ -138,19 +138,19 @@ fn read_bytes(filename: &str) -> Result<Vec<u8>> {
     }
 }
 
-fn parser_from_ext(filename: &str, bytes: Vec<u8>) -> Box<Parser> {
+fn parser_from_ext(filename: &str) -> ParserNext {
     let ext: Option<&str> =
         Path::new(filename)
         .extension()
         .and_then(|x| x.to_str());
     match ext {
-        Some("bert") | Some("bert1") => Box::new(Bert1Parser::new(bytes)),
-        Some("bert2") => Box::new(Bert2Parser::new(bytes)),
-        Some("log") => Box::new(DiskLogParser::new(bytes)),
+        Some("bert") | Some("bert1") => BertParser::bert1_next,
+        Some("bert2") => BertParser::bert2_next,
+        Some("log") => BertParser::disk_log_next,
         _ => {
             eprintln!("{}: cannot find an appropriate parser for {}; using BERT",
                       PROG_NAME, filename);
-            Box::new(Bert1Parser::new(bytes))
+            BertParser::bert1_next
         },
     }
 }
@@ -166,12 +166,13 @@ fn handle_file(
     let now = Instant::now();
     let bytes = read_bytes(filename)?;
     let read_dur = now.elapsed();
+    let mut parser = BertParser::new(bytes);
 
-    let mut parser: Box<Parser> = match parser_choice {
-        ParserChoice::ForceBert1 => Box::new(Bert1Parser::new(bytes)),
-        ParserChoice::ForceBert2 => Box::new(Bert2Parser::new(bytes)),
-        ParserChoice::ForceDiskLog => Box::new(DiskLogParser::new(bytes)),
-        ParserChoice::ByExtension => parser_from_ext(filename, bytes),
+    let parser_next: ParserNext = match parser_choice {
+        ParserChoice::ForceBert1 => BertParser::bert1_next,
+        ParserChoice::ForceBert2 => BertParser::bert2_next,
+        ParserChoice::ForceDiskLog => BertParser::disk_log_next,
+        ParserChoice::ByExtension => parser_from_ext(filename),
     };
 
     let mut parse_dur = Duration::new(0, 0);
@@ -179,7 +180,7 @@ fn handle_file(
 
     loop {
         let now = Instant::now();
-        let term = match parser.next() {
+        let term = match parser_next(&mut parser) {
             Some(term) => term?,
             None => break,
         };

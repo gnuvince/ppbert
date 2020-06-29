@@ -1,10 +1,10 @@
 use ppbert::prelude::*;
-use ppbert::parsers::*;
+use ppbert::parser::*;
 
 fn p(bytes: &[u8]) -> Result<Vec<BertTerm>> {
-    let mut parser = Bert2Parser::new(bytes.to_vec());
+    let mut parser = BertParser::new(bytes.to_vec());
     let mut terms = Vec::new();
-    while let Some(res) = parser.next() {
+    while let Some(res) = parser.bert2_next() {
         terms.push(res?);
     }
     return Ok(terms);

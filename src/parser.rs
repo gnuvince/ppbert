@@ -1,3 +1,5 @@
+use crate::prelude::*;
+
 use num_bigint::{BigInt, ToBigInt};
 use num_traits::{Zero, One};
 
@@ -6,18 +8,52 @@ use byteorder::{ReadBytesExt, BigEndian};
 use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_1;
 
-use crate::prelude::*;
+pub type ParserNext = fn(&mut BertParser) -> Option<Result<BertTerm>>;
 
 #[derive(Debug)]
-pub struct BasicParser {
+pub struct BertParser {
     contents: Vec<u8>,
     pos: usize,
 }
 
-impl BasicParser {
-    pub fn new(contents: Vec<u8>) -> BasicParser {
-        BasicParser { contents: contents, pos: 0 }
+impl BertParser {
+    pub fn new(contents: Vec<u8>) -> BertParser {
+        BertParser { contents: contents, pos: 0 }
     }
+
+    // "Iterators"
+    pub fn bert1_next(&mut self) -> Option<Result<BertTerm>> {
+        if self.eof() {
+            return None;
+        }
+        let result =
+            self.magic_number()
+            .and_then(|_| self.bert_term());
+        return Some(result);
+    }
+
+    pub fn bert2_next(&mut self) -> Option<Result<BertTerm>> {
+        if self.eof() {
+            return None;
+        }
+        let result =
+            self.parse_varint()
+            .and_then(|_| self.magic_number())
+            .and_then(|_| self.bert_term());
+        return Some(result);
+    }
+
+    pub fn disk_log_next(&mut self) -> Option<Result<BertTerm>> {
+        if self.eof() {
+            return None;
+        }
+        let result =
+            self.disk_log_magic()
+            .and_then(|_| self.disk_log_opened_status())
+            .and_then(|_| self.disk_log_term());
+        return Some(result);
+    }
+
 
     // Parsers
     pub fn magic_number(&mut self) -> Result<()> {
@@ -352,7 +388,7 @@ impl BasicParser {
 #[test]
 fn test_varint() {
     assert_eq!(1, {
-        match BasicParser::new(vec![1]).parse_varint() {
+        match BertParser::new(vec![1]).parse_varint() {
             Ok(x) => x,
             Err(_) => u64::max_value()
         }
@@ -360,14 +396,14 @@ fn test_varint() {
 
 
     assert_eq!(300, {
-        match BasicParser::new(vec![0b1010_1100, 0b0000_0010]).parse_varint() {
+        match BertParser::new(vec![0b1010_1100, 0b0000_0010]).parse_varint() {
             Ok(x) => x,
             Err(_) => u64::max_value()
         }
     });
 
-    assert!(BasicParser::new(vec![0xff, 0xff, 0xff, 0xff,
+    assert!(BertParser::new(vec![0xff, 0xff, 0xff, 0xff,
                                   0xff, 0xff, 0xff, 0x7f]).parse_varint().is_ok());
-    assert!(BasicParser::new(vec![0xff, 0xff, 0xff, 0xff,
+    assert!(BertParser::new(vec![0xff, 0xff, 0xff, 0xff,
                                   0xff, 0xff, 0xff, 0x80]).parse_varint().is_err());
 }

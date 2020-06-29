@@ -1,7 +1,7 @@
 pub mod error;
 pub mod consts;
 pub mod bertterm;
-pub mod parsers;
+pub mod parser;
 pub mod pp;
 
 pub mod prelude {
