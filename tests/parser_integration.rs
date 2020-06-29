@@ -1,11 +1,11 @@
 use num_bigint::ToBigInt;
 
 use ppbert::prelude::*;
-use ppbert::parsers::*;
+use ppbert::parser::*;
 
 fn p(bytes: &[u8]) -> Result<BertTerm> {
-    let mut parser = Bert1Parser::new(bytes.to_vec());
-    let res = parser.next().unwrap();
+    let mut parser = BertParser::new(bytes.to_vec());
+    let res = parser.bert1_next().unwrap();
     return res;
 }
 
