@@ -1,6 +1,9 @@
 name: Test and build ppbert
 
-on: push
+on:
+  push:
+    tags:
+      - "*.*.*"
 
 jobs:
   test:
