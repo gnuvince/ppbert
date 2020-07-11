@@ -13,14 +13,6 @@ use ppbert::pp::*;
 
 const PROG_NAME: &str = "ppbert";
 
-#[derive(Clone, Copy)]
-enum ParserChoice {
-    ByExtension,
-    ForceBert1,
-    ForceBert2,
-    ForceDiskLog,
-}
-
 fn opt_usize(m: &getopts::Matches, opt: &str, default: usize) -> usize {
     match m.opt_get_default(opt, default) {
         Ok(n) => n,
@@ -79,15 +71,15 @@ fn main() {
     let transform_proplists = matches.opt_present("transform-proplists");
     let verbose = matches.opt_present("verbose");
 
-    let parser_choice =
+    let parser_choice: Option<ParserNext> =
         if matches.opt_present("bert1") {
-            ParserChoice::ForceBert1
+            Some(BertParser::bert1_next)
         } else if matches.opt_present("bert2") {
-            ParserChoice::ForceBert2
+            Some(BertParser::bert2_next)
         } else if matches.opt_present("disk-log") {
-            ParserChoice::ForceDiskLog
+            Some(BertParser::disk_log_next)
         } else {
-            ParserChoice::ByExtension
+            None
         };
 
     let pp: Box<dyn PrettyPrinter> =
@@ -159,7 +151,7 @@ fn handle_file(
     filename: &str,
     parse_only: bool,
     verbose: bool,
-    parser_choice: ParserChoice,
+    parser_choice: Option<ParserNext>,
     pp: &Box<dyn PrettyPrinter>,
 ) -> Result<()> {
     // Read file or stdin into buffer
@@ -169,10 +161,8 @@ fn handle_file(
     let mut parser = BertParser::new(bytes);
 
     let parser_next: ParserNext = match parser_choice {
-        ParserChoice::ForceBert1 => BertParser::bert1_next,
-        ParserChoice::ForceBert2 => BertParser::bert2_next,
-        ParserChoice::ForceDiskLog => BertParser::disk_log_next,
-        ParserChoice::ByExtension => parser_from_ext(filename),
+        Some(f) => f,
+        None => parser_from_ext(filename),
     };
 
     let mut parse_dur = Duration::new(0, 0);
