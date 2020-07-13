@@ -93,16 +93,12 @@ fn main() {
 
     let mut return_code = 0;
     for file in &matches.free {
-        let res = handle_file(file, parse_only, verbose, parser_choice, &pp);
-        match res {
-            Ok(()) => (),
-            Err(ref e) => {
-                if broken_pipe(e) {
-                    break;
-                }
-                return_code = 1;
-                eprintln!("{}: {}: {}", PROG_NAME, file, e);
+        if let Err(ref e) = handle_file(file, parse_only, verbose, parser_choice, &pp) {
+            if broken_pipe(e) {
+                break;
             }
+            return_code = 1;
+            eprintln!("{}: {}: {}", PROG_NAME, file, e);
         }
     }
     exit(return_code);
