@@ -38,6 +38,7 @@ fn main() {
     opts.optflag("j", "json", "print as JSON");
     opts.optflag("t", "transform-proplists", "convert proplists to JSON objects");
     opts.optflag("b", "as-bert", "print as BERT");
+    opts.optflag("", "append-period", "append a period to terms (useful for loading terms with file:consult/1)");
 
     let mut matches = match opts.parse(env::args().skip(1)) {
         Ok(m) => m,
@@ -70,6 +71,7 @@ fn main() {
     let as_bert = matches.opt_present("as-bert");
     let transform_proplists = matches.opt_present("transform-proplists");
     let verbose = matches.opt_present("verbose");
+    let append_period = matches.opt_present("append-period");
 
     let parser_choice: Option<ParserNext> =
         if matches.opt_present("bert1") {
@@ -88,7 +90,8 @@ fn main() {
         } else if as_bert {
             Box::new(BertWriter::new())
         } else {
-            Box::new(ErlangPrettyPrinter::new(indent_width, max_per_line))
+            let terminator = if append_period { "." } else { "" };
+            Box::new(ErlangPrettyPrinter::new(indent_width, max_per_line, terminator))
         };
 
     let mut return_code = 0;

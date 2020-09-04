@@ -7,13 +7,14 @@ use crate::pp::utils::*;
 
 pub struct ErlangPrettyPrinter {
     indent_width: usize,
-    max_terms_per_line: usize
+    max_terms_per_line: usize,
+    terminator: &'static str,
 }
 
 impl PrettyPrinter for ErlangPrettyPrinter {
     fn write(&self, term: &BertTerm, mut w: Box<dyn io::Write>) -> Result<()> {
         self.write_term(term, &mut w, 0)?;
-        writeln!(w, "")?;
+        writeln!(w, "{}", self.terminator)?;
         return Ok(());
     }
 }
@@ -23,8 +24,14 @@ impl ErlangPrettyPrinter {
     /// are indented with a width of `indent_width` and a
     /// maximum of `max_terms_per_line` basic terms (i.e.,
     /// integers, floats, strings) can be printed per line.
-    pub fn new(indent_width: usize, max_terms_per_line: usize) -> Self {
-        ErlangPrettyPrinter { indent_width, max_terms_per_line }
+    pub fn new(indent_width: usize,
+               max_terms_per_line: usize,
+               terminator: &'static str) -> Self {
+        ErlangPrettyPrinter {
+            indent_width,
+            max_terms_per_line,
+            terminator
+        }
     }
 
     fn write_term<W: io::Write>(&self, term: &BertTerm, w: &mut W, depth: usize) -> io::Result<()> {
