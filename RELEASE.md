@@ -1,3 +1,7 @@
+0.12.1
+======
+  - INFRA: Improved GitHub Actions Pipeline
+
 0.12.0
 ======
   - INTERFACE: add `--append-period` flag
