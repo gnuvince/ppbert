@@ -16,7 +16,7 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
 
-  release-linux-musl:
+  build-linux-musl:
     needs: test
     runs-on: ubuntu-latest
     steps:
@@ -28,7 +28,7 @@ jobs:
         name: ppbert_linux_musl
         path: target/x86_64-unknown-linux-musl/release/ppbert
 
-  release-macos:
+  build-macos:
     needs: test
     runs-on: macos-latest
     steps:
@@ -39,7 +39,7 @@ jobs:
         name: ppbert_macos
         path: target/release/ppbert
 
-  release-windows:
+  build-windows:
     needs: test
     runs-on: windows-latest
     steps:
@@ -49,3 +49,53 @@ jobs:
       with:
         name: ppbert_windows
         path: target/release/ppbert.exe
+
+  create-release:
+    needs: [build-linux-musl, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: Download Artifacts
+      uses: actions/download-artifact@v2
+      with:
+        path: assets/
+
+    - name: Display structure of downloaded files
+      run: ls -lR
+      working-directory: assets/
+
+    - name: Upload Release Assets
+      id: upload_release_assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./assets/ppbert_linux_musl/ppbert
+        asset_name: ppbert_linux_musl
+        asset_content_type: application/octet-stream
+    - uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./assets/ppbert_macos/ppbert
+        asset_name: ppbert_macos
+        asset_content_type: application/octet-stream
+    - uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./assets/ppbert_windows/ppbert.exe
+        asset_name: ppbert_windows.exe
+        asset_content_type: application/octet-stream
