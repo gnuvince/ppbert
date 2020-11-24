@@ -1,3 +1,7 @@
+0.12.0
+======
+  - INTERFACE: add `--append-period` flag
+
 0.11.0
 ======
   - INTERFACE: add `-b/--as-bert` flag to output back into BERT
