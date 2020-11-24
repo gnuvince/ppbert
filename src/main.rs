@@ -12,6 +12,7 @@ use ppbert::parser::*;
 use ppbert::pp::*;
 
 const PROG_NAME: &str = "ppbert";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn opt_usize(m: &getopts::Matches, opt: &str, default: usize) -> usize {
     match m.opt_get_default(opt, default) {
