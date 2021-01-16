@@ -111,7 +111,7 @@ fn main() {
 
     let mut return_code = 0;
     for file in &matches.free {
-        if let Err(ref e) = handle_file(file, parse_only, verbose, parser_choice, &pp) {
+        if let Err(ref e) = handle_file(file, parse_only, verbose, parser_choice, &*pp) {
             if broken_pipe(e) {
                 break;
             }
@@ -163,7 +163,7 @@ fn handle_file(
     parse_only: bool,
     verbose: bool,
     parser_choice: Option<ParserNext>,
-    pp: &Box<dyn PrettyPrinter>,
+    pp: &dyn PrettyPrinter,
 ) -> Result<()> {
     // Read file or stdin into buffer
     let now = Instant::now();
