@@ -1,4 +1,4 @@
-use num_bigint::{BigInt};
+use num_bigint::BigInt;
 
 /// A enum representing a BertTerm
 #[derive(Debug, PartialEq)]
@@ -32,7 +32,6 @@ pub enum BertTerm {
 
     /// A container for key-to-value pairs
     Map(Vec<BertTerm>, Vec<BertTerm>),
-
 }
 
 impl BertTerm {
@@ -47,9 +46,7 @@ impl BertTerm {
             | BertTerm::String(_)
             | BertTerm::Binary(_)
             | BertTerm::Nil => true,
-            BertTerm::List(_)
-            | BertTerm::Tuple(_)
-            | BertTerm::Map(_, _) => false
+            BertTerm::List(_) | BertTerm::Tuple(_) | BertTerm::Map(_, _) => false,
         }
     }
 
@@ -61,21 +58,20 @@ impl BertTerm {
                 [BertTerm::Atom(_), _] => true,
                 [BertTerm::String(_), _] => true,
                 [BertTerm::Binary(_), _] => true,
-                _ => false
+                _ => false,
             }
         }
 
         fn is_proplist_entry(t: &BertTerm) -> bool {
             match *t {
                 BertTerm::Tuple(ref elems) => is_proplist_tuple(elems),
-                _ => false
+                _ => false,
             }
         }
 
         match *self {
-            BertTerm::List(ref elems) =>
-                elems.iter().all(|e| is_proplist_entry(e)),
-            _ => false
+            BertTerm::List(ref elems) => elems.iter().all(|e| is_proplist_entry(e)),
+            _ => false,
         }
     }
 }

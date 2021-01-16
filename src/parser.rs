@@ -1,12 +1,12 @@
 use crate::prelude::*;
 
 use num_bigint::{BigInt, ToBigInt};
-use num_traits::{Zero, One};
+use num_traits::{One, Zero};
 
-use byteorder::{ReadBytesExt, BigEndian};
+use byteorder::{BigEndian, ReadBytesExt};
 
-use encoding::{Encoding, DecoderTrap};
 use encoding::all::ISO_8859_1;
+use encoding::{DecoderTrap, Encoding};
 
 pub type ParserNext = fn(&mut BertParser) -> Option<Result<BertTerm>>;
 
@@ -18,7 +18,10 @@ pub struct BertParser {
 
 impl BertParser {
     pub fn new(contents: Vec<u8>) -> BertParser {
-        BertParser { contents: contents, pos: 0 }
+        BertParser {
+            contents: contents,
+            pos: 0,
+        }
     }
 
     // "Iterators"
@@ -26,9 +29,7 @@ impl BertParser {
         if self.eof() {
             return None;
         }
-        let result =
-            self.magic_number()
-            .and_then(|_| self.bert_term());
+        let result = self.magic_number().and_then(|_| self.bert_term());
         return Some(result);
     }
 
@@ -36,8 +37,8 @@ impl BertParser {
         if self.eof() {
             return None;
         }
-        let result =
-            self.parse_varint()
+        let result = self
+            .parse_varint()
             .and_then(|_| self.magic_number())
             .and_then(|_| self.bert_term());
         return Some(result);
@@ -47,13 +48,12 @@ impl BertParser {
         if self.eof() {
             return None;
         }
-        let result =
-            self.disk_log_magic()
+        let result = self
+            .disk_log_magic()
             .and_then(|_| self.disk_log_opened_status())
             .and_then(|_| self.disk_log_term());
         return Some(result);
     }
-
 
     // Parsers
     pub fn magic_number(&mut self) -> Result<()> {
@@ -121,10 +121,10 @@ impl BertParser {
     pub fn bert_term(&mut self) -> Result<BertTerm> {
         let initial_pos = self.pos;
         match self.eat_u8()? {
-            SMALL_INTEGER_EXT => { self.small_integer() }
-            INTEGER_EXT => { self.integer() }
-            FLOAT_EXT => { self.old_float() }
-            NEW_FLOAT_EXT => { self.new_float() }
+            SMALL_INTEGER_EXT => self.small_integer(),
+            INTEGER_EXT => self.integer(),
+            FLOAT_EXT => self.old_float(),
+            NEW_FLOAT_EXT => self.new_float(),
             ATOM_EXT => {
                 let len = self.eat_u16_be()? as usize;
                 self.atom(len)
@@ -149,10 +149,10 @@ impl BertParser {
                 let len = self.eat_u32_be()? as usize;
                 self.tuple(len)
             }
-            NIL_EXT => { Ok(BertTerm::Nil) }
-            LIST_EXT => { self.list() }
-            STRING_EXT => { self.string() }
-            BINARY_EXT => { self.binary() }
+            NIL_EXT => Ok(BertTerm::Nil),
+            LIST_EXT => self.list(),
+            STRING_EXT => self.string(),
+            BINARY_EXT => self.binary(),
             SMALL_BIG_EXT => {
                 let len = self.eat_u8()?;
                 self.bigint(len as usize)
@@ -161,10 +161,8 @@ impl BertParser {
                 let len = self.eat_u32_be()?;
                 self.bigint(len as usize)
             }
-            MAP_EXT => {
-                self.map()
-            }
-            tag => { Err(BertError::InvalidTag(initial_pos, tag)) }
+            MAP_EXT => self.map(),
+            tag => Err(BertError::InvalidTag(initial_pos, tag)),
         }
     }
 
@@ -216,7 +214,8 @@ impl BertParser {
             let s = unsafe { String::from_utf8_unchecked(bytes) };
             Ok(BertTerm::Atom(s))
         } else {
-            ISO_8859_1.decode(&bytes, DecoderTrap::Strict)
+            ISO_8859_1
+                .decode(&bytes, DecoderTrap::Strict)
                 .map(|s| BertTerm::Atom(s))
                 .map_err(|_| BertError::InvalidLatin1Atom(initial_pos))
         }
@@ -232,7 +231,7 @@ impl BertParser {
 
     pub fn tuple(&mut self, len: usize) -> Result<BertTerm> {
         let mut terms = Vec::with_capacity(len);
-        for _ in 0 .. len {
+        for _ in 0..len {
             terms.push(self.bert_term()?);
         }
         Ok(BertTerm::Tuple(terms))
@@ -253,13 +252,15 @@ impl BertParser {
     pub fn list(&mut self) -> Result<BertTerm> {
         let len = self.eat_u32_be()?;
         let mut terms = Vec::with_capacity(len as usize + 1);
-        for _ in 0 .. len {
+        for _ in 0..len {
             terms.push(self.bert_term()?);
         }
         let tail = self.bert_term()?;
         match tail {
             BertTerm::Nil => (),
-            last_term => { terms.push(last_term); }
+            last_term => {
+                terms.push(last_term);
+            }
         };
         Ok(BertTerm::List(terms))
     }
@@ -268,7 +269,7 @@ impl BertParser {
         let sign = self.eat_u8()?;
         let mut sum: BigInt = Zero::zero();
         let mut pos: BigInt = One::one();
-        for _ in 0 .. len {
+        for _ in 0..len {
             let d = self.eat_u8()?;
             let t = &pos * &(d.to_bigint().unwrap());
             sum = sum + &t;
@@ -285,7 +286,7 @@ impl BertParser {
         let len = self.eat_u32_be()? as usize;
         let mut keys = Vec::with_capacity(len);
         let mut vals = Vec::with_capacity(len);
-        for _ in 0 .. len {
+        for _ in 0..len {
             keys.push(self.bert_term()?);
             vals.push(self.bert_term()?);
         }
@@ -302,7 +303,7 @@ impl BertParser {
             return Err(BertError::NotEnoughData {
                 offset: self.pos,
                 needed: 1,
-                available: 0
+                available: 0,
             });
         } else {
             return Ok(self.contents[self.pos]);
@@ -318,10 +319,10 @@ impl BertParser {
             return Err(BertError::NotEnoughData {
                 offset: self.pos,
                 needed: len,
-                available: self.contents.len() - self.pos
-            })
+                available: self.contents.len() - self.pos,
+            });
         }
-        let slice = &self.contents[self.pos .. self.pos + len];
+        let slice = &self.contents[self.pos..self.pos + len];
         self.pos += len;
         return Ok(slice);
     }
@@ -370,7 +371,7 @@ impl BertParser {
 
         while !self.eof() && i < MAX_LEN {
             let b = self.eat_u8()?;
-            val = val | ((b as u64 & 0x7f) << (7*i));
+            val = val | ((b as u64 & 0x7f) << (7 * i));
             if b & 0x80 == 0 {
                 break;
             }
@@ -384,26 +385,30 @@ impl BertParser {
     }
 }
 
-
 #[test]
 fn test_varint() {
     assert_eq!(1, {
         match BertParser::new(vec![1]).parse_varint() {
             Ok(x) => x,
-            Err(_) => u64::max_value()
+            Err(_) => u64::max_value(),
         }
     });
-
 
     assert_eq!(300, {
         match BertParser::new(vec![0b1010_1100, 0b0000_0010]).parse_varint() {
             Ok(x) => x,
-            Err(_) => u64::max_value()
+            Err(_) => u64::max_value(),
         }
     });
 
-    assert!(BertParser::new(vec![0xff, 0xff, 0xff, 0xff,
-                                  0xff, 0xff, 0xff, 0x7f]).parse_varint().is_ok());
-    assert!(BertParser::new(vec![0xff, 0xff, 0xff, 0xff,
-                                  0xff, 0xff, 0xff, 0x80]).parse_varint().is_err());
+    assert!(
+        BertParser::new(vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f])
+            .parse_varint()
+            .is_ok()
+    );
+    assert!(
+        BertParser::new(vec![0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x80])
+            .parse_varint()
+            .is_err()
+    );
 }

@@ -1,15 +1,15 @@
 use std::env;
 use std::fs;
-use std::io::{self, ErrorKind, Read, BufWriter};
+use std::io::{self, BufWriter, ErrorKind, Read};
 use std::path::Path;
 use std::process::exit;
 use std::time::{Duration, Instant};
 
 use getopts::Options;
 
-use ppbert::prelude::*;
 use ppbert::parser::*;
 use ppbert::pp::*;
+use ppbert::prelude::*;
 
 const PROG_NAME: &str = "ppbert";
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -24,22 +24,34 @@ fn opt_usize(m: &getopts::Matches, opt: &str, default: usize) -> usize {
     }
 }
 
-
 fn main() {
     let mut opts = Options::new();
     opts.optflag("V", "version", "display version");
     opts.optflag("h", "help", "display this help");
     opts.optopt("i", "indent", "indent with NUM spaces", "NUM");
-    opts.optopt("m", "per-line", "print at most NUM basic terms per line", "NUM");
+    opts.optopt(
+        "m",
+        "per-line",
+        "print at most NUM basic terms per line",
+        "NUM",
+    );
     opts.optflag("p", "parse", "parse only, not pretty print");
     opts.optflag("1", "bert1", "force ppbert to use regular BERT parser");
     opts.optflag("2", "bert2", "force ppbert to use BERT2 parser");
     opts.optflag("d", "disk-log", "force ppbert to use DiskLog parser");
     opts.optflag("v", "verbose", "show diagnostics on stderr");
     opts.optflag("j", "json", "print as JSON");
-    opts.optflag("t", "transform-proplists", "convert proplists to JSON objects");
+    opts.optflag(
+        "t",
+        "transform-proplists",
+        "convert proplists to JSON objects",
+    );
     opts.optflag("b", "as-bert", "print as BERT");
-    opts.optflag("", "append-period", "append a period to terms (useful for loading terms with file:consult/1)");
+    opts.optflag(
+        "",
+        "append-period",
+        "append a period to terms (useful for loading terms with file:consult/1)",
+    );
 
     let mut matches = match opts.parse(env::args().skip(1)) {
         Ok(m) => m,
@@ -74,26 +86,28 @@ fn main() {
     let verbose = matches.opt_present("verbose");
     let append_period = matches.opt_present("append-period");
 
-    let parser_choice: Option<ParserNext> =
-        if matches.opt_present("bert1") {
-            Some(BertParser::bert1_next)
-        } else if matches.opt_present("bert2") {
-            Some(BertParser::bert2_next)
-        } else if matches.opt_present("disk-log") {
-            Some(BertParser::disk_log_next)
-        } else {
-            None
-        };
+    let parser_choice: Option<ParserNext> = if matches.opt_present("bert1") {
+        Some(BertParser::bert1_next)
+    } else if matches.opt_present("bert2") {
+        Some(BertParser::bert2_next)
+    } else if matches.opt_present("disk-log") {
+        Some(BertParser::disk_log_next)
+    } else {
+        None
+    };
 
-    let pp: Box<dyn PrettyPrinter> =
-        if json {
-            Box::new(JsonPrettyPrinter::new(transform_proplists))
-        } else if as_bert {
-            Box::new(BertWriter::new())
-        } else {
-            let terminator = if append_period { "." } else { "" };
-            Box::new(ErlangPrettyPrinter::new(indent_width, max_per_line, terminator))
-        };
+    let pp: Box<dyn PrettyPrinter> = if json {
+        Box::new(JsonPrettyPrinter::new(transform_proplists))
+    } else if as_bert {
+        Box::new(BertWriter::new())
+    } else {
+        let terminator = if append_period { "." } else { "" };
+        Box::new(ErlangPrettyPrinter::new(
+            indent_width,
+            max_per_line,
+            terminator,
+        ))
+    };
 
     let mut return_code = 0;
     for file in &matches.free {
@@ -108,12 +122,10 @@ fn main() {
     exit(return_code);
 }
 
-
 fn broken_pipe(err: &BertError) -> bool {
     match *err {
-        BertError::IoError(ref ioerr) =>
-            ioerr.kind() == ErrorKind::BrokenPipe,
-        _ => false
+        BertError::IoError(ref ioerr) => ioerr.kind() == ErrorKind::BrokenPipe,
+        _ => false,
     }
 }
 
@@ -131,19 +143,18 @@ fn read_bytes(filename: &str) -> Result<Vec<u8>> {
 }
 
 fn parser_from_ext(filename: &str) -> ParserNext {
-    let ext: Option<&str> =
-        Path::new(filename)
-        .extension()
-        .and_then(|x| x.to_str());
+    let ext: Option<&str> = Path::new(filename).extension().and_then(|x| x.to_str());
     match ext {
         Some("bert") | Some("bert1") => BertParser::bert1_next,
         Some("bert2") => BertParser::bert2_next,
         Some("log") => BertParser::disk_log_next,
         _ => {
-            eprintln!("{}: cannot find an appropriate parser for {}; using BERT",
-                      PROG_NAME, filename);
+            eprintln!(
+                "{}: cannot find an appropriate parser for {}; using BERT",
+                PROG_NAME, filename
+            );
             BertParser::bert1_next
-        },
+        }
     }
 }
 

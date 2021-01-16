@@ -1,10 +1,10 @@
 use std::io;
 
 use byteorder::{BigEndian, WriteBytesExt};
-use num_bigint::{Sign};
+use num_bigint::Sign;
 
-use crate::prelude::*;
 use crate::pp::PrettyPrinter;
+use crate::prelude::*;
 
 pub struct BertWriter;
 
@@ -18,7 +18,7 @@ impl PrettyPrinter for BertWriter {
 
 impl BertWriter {
     pub fn new() -> Self {
-        BertWriter { }
+        BertWriter {}
     }
 
     fn write_bert<W: io::Write>(&self, term: &BertTerm, w: &mut W) -> io::Result<()> {
