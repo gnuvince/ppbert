@@ -5,8 +5,6 @@ use std::path::Path;
 use std::process::exit;
 use std::time::{Duration, Instant};
 
-use getopts::Options;
-
 use ppbert::parser::*;
 use ppbert::pp::*;
 use ppbert::prelude::*;
@@ -14,109 +12,123 @@ use ppbert::prelude::*;
 const PROG_NAME: &str = env!("CARGO_BIN_NAME");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-fn opt_usize(m: &getopts::Matches, opt: &str, default: usize) -> usize {
-    match m.opt_get_default(opt, default) {
-        Ok(n) => n,
-        Err(_) => {
-            eprintln!("'{}' must be a number", opt);
-            exit(1);
-        }
-    }
+#[derive(gumdrop::Options)]
+struct Opts {
+    #[options(help = "display help")]
+    help: bool,
+
+    #[options(short = "V", long = "version", help = "display version")]
+    version: bool,
+
+    #[options(short = "v", long = "verbose", help = "show diagnostics on stderr")]
+    verbose: bool,
+
+    #[options(short = "p", long = "parse", help = "only parse, do not pretty print")]
+    parse: bool,
+
+    #[options(
+        short = "1",
+        long = "bert1",
+        help = "force ppbert to use regular BERT parser"
+    )]
+    bert1: bool,
+
+    #[options(short = "2", long = "bert2", help = "force ppbert to use BERT2 parser")]
+    bert2: bool,
+
+    #[options(
+        short = "d",
+        long = "disk-log",
+        help = "force ppbert to use disk-log parser"
+    )]
+    disk_log: bool,
+
+    #[options(
+        short = "i",
+        long = "indent",
+        help = "indent with NUM space",
+        meta = "NUM",
+        default = "2"
+    )]
+    indent: usize,
+
+    #[options(
+        short = "m",
+        long = "per-line",
+        help = "print at most NUM basic terms per line",
+        meta = "NUM",
+        default = "6"
+    )]
+    per_line: usize,
+
+    #[options(
+        short = ".",
+        long = "append-period",
+        help = "append a period to Erlang terms (useful for loading with file:consult/1)"
+    )]
+    append: bool,
+
+    #[options(short = "j", long = "json", help = "pretty print as JSON")]
+    json: bool,
+
+    #[options(
+        short = "t",
+        long = "transform-proplists",
+        help = "transform Erlang proplists into JSON objects"
+    )]
+    transform: bool,
+
+    #[options(short = "b", long = "bert", help = "print as BERT")]
+    bert: bool,
+
+    #[options(help = "files to process", free)]
+    files: Vec<String>,
 }
 
 fn main() {
-    let mut opts = Options::new();
-    opts.optflag("V", "version", "display version");
-    opts.optflag("h", "help", "display this help");
-    opts.optopt("i", "indent", "indent with NUM spaces", "NUM");
-    opts.optopt(
-        "m",
-        "per-line",
-        "print at most NUM basic terms per line",
-        "NUM",
-    );
-    opts.optflag("p", "parse", "parse only, not pretty print");
-    opts.optflag("1", "bert1", "force ppbert to use regular BERT parser");
-    opts.optflag("2", "bert2", "force ppbert to use BERT2 parser");
-    opts.optflag("d", "disk-log", "force ppbert to use DiskLog parser");
-    opts.optflag("v", "verbose", "show diagnostics on stderr");
-    opts.optflag("j", "json", "print as JSON");
-    opts.optflag(
-        "t",
-        "transform-proplists",
-        "convert proplists to JSON objects",
-    );
-    opts.optflag("b", "as-bert", "print as BERT");
-    opts.optflag(
-        "",
-        "append-period",
-        "append a period to terms (useful for loading terms with file:consult/1)",
-    );
+    let mut opts: Opts = gumdrop::parse_args_default_or_exit();
 
-    let mut matches = match opts.parse(env::args().skip(1)) {
-        Ok(m) => m,
-        Err(e) => {
-            eprintln!("{}: {}", PROG_NAME, e);
-            eprintln!("{}", opts.usage(&format!("{} {}", PROG_NAME, VERSION)));
-            exit(1);
-        }
-    };
-
-    if matches.opt_present("help") {
-        println!("{}", opts.usage(&format!("{} {}", PROG_NAME, VERSION)));
-        exit(0);
-    }
-
-    if matches.opt_present("version") {
-        println!("{} {}", PROG_NAME, VERSION);
+    if opts.version {
+        println!("{}", VERSION);
         exit(0);
     }
 
     // If no files to process, use stdin.
-    if matches.free.is_empty() {
-        matches.free.push("-".to_owned());
+    if opts.files.is_empty() {
+        opts.files.push("-".to_string());
     }
 
-    let indent_width = opt_usize(&matches, "indent", 2);
-    let max_per_line = opt_usize(&matches, "per-line", 6);
-    let parse_only = matches.opt_present("parse");
-    let json = matches.opt_present("json");
-    let as_bert = matches.opt_present("as-bert");
-    let transform_proplists = matches.opt_present("transform-proplists");
-    let verbose = matches.opt_present("verbose");
-    let append_period = matches.opt_present("append-period");
-
-    let parser_choice: Option<ParserNext> = if matches.opt_present("bert1") {
+    let parser_choice: Option<ParserNext> = if opts.bert1 {
         Some(BertParser::bert1_next)
-    } else if matches.opt_present("bert2") {
+    } else if opts.bert2 {
         Some(BertParser::bert2_next)
-    } else if matches.opt_present("disk-log") {
+    } else if opts.disk_log {
         Some(BertParser::disk_log_next)
     } else {
         None
     };
 
-    let pp: Box<dyn PrettyPrinter> = if json {
-        Box::new(JsonPrettyPrinter::new(transform_proplists))
-    } else if as_bert {
+    let pp: Box<dyn PrettyPrinter> = if opts.json {
+        Box::new(JsonPrettyPrinter::new(opts.transform))
+    } else if opts.bert {
         Box::new(BertWriter::new())
     } else {
-        let terminator = if append_period { "." } else { "" };
+        let terminator = if opts.append { "." } else { "" };
         Box::new(ErlangPrettyPrinter::new(
-            indent_width,
-            max_per_line,
+            opts.indent,
+            opts.per_line,
             terminator,
         ))
     };
 
     let mut return_code = 0;
-    for file in &matches.free {
-        if let Err(ref e) = handle_file(file, parse_only, verbose, parser_choice, &*pp) {
+    for file in &opts.files {
+        if let Err(ref e) = handle_file(file, opts.parse, opts.verbose, parser_choice, &*pp) {
             if broken_pipe(e) {
                 break;
             }
             return_code = 1;
-            eprintln!("{}: {}: {}", PROG_NAME, file, e);
+            eprintln!("{}: {:?}: {}", PROG_NAME, file, e);
         }
     }
     exit(return_code);
