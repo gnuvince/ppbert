@@ -22,6 +22,11 @@ path = "src/main.rs"
 bench = false
 
 [profile.release]
+opt-level = 0
 debug = true
 lto = "thin"
 panic = "abort"
+
+[[bin]]
+name = "do"
+path = "src/do/main.rs"
