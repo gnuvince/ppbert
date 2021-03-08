@@ -1,9 +1,10 @@
 use std::io;
-use std::iter;
 
 use crate::pp::utils::*;
 use crate::pp::PrettyPrinter;
 use crate::prelude::*;
+
+const SPACES: [u8; 4096] = [b' '; 4096];
 
 pub struct ErlangPrettyPrinter {
     indent_width: usize,
@@ -92,20 +93,20 @@ impl ErlangPrettyPrinter {
         let prefix = if multi_line {
             self.indentation(depth + 1)
         } else {
-            String::new()
+            &[]
         };
 
         w.write_all(open)?;
-        let mut comma = "";
+        let mut comma: &[u8] = b"";
         for t in terms {
-            w.write_all(comma.as_bytes())?;
-            w.write_all(prefix.as_bytes())?;
+            w.write_all(comma)?;
+            w.write_all(prefix)?;
             self.write_term(t, w, depth + 1)?;
-            comma = ", ";
+            comma = b", ";
         }
 
         if multi_line {
-            w.write_all(&self.indentation(depth).as_bytes())?;
+            w.write_all(&self.indentation(depth))?;
         }
 
         w.write_all(close)
@@ -122,22 +123,22 @@ impl ErlangPrettyPrinter {
         let prefix = if multi_line {
             self.indentation(depth + 1)
         } else {
-            String::new()
+            &[]
         };
 
         w.write_all(b"#{")?;
-        let mut comma = "";
+        let mut comma: &[u8] = b"";
         for i in 0..keys.len() {
-            w.write_all(comma.as_bytes())?;
-            w.write_all(prefix.as_bytes())?;
+            w.write_all(comma)?;
+            w.write_all(prefix)?;
             self.write_term(&keys[i], w, depth + 1)?;
             w.write_all(b" => ")?;
             self.write_term(&vals[i], w, depth + 1)?;
-            comma = ", ";
+            comma = b", ";
         }
 
         if multi_line {
-            w.write_all(&self.indentation(depth).as_bytes())?;
+            w.write_all(&self.indentation(depth))?;
         }
         w.write_all(b"}")
     }
@@ -146,9 +147,8 @@ impl ErlangPrettyPrinter {
         terms.len() <= self.max_terms_per_line && terms.iter().all(BertTerm::is_basic)
     }
 
-    fn indentation(&self, depth: usize) -> String {
-        let nl = iter::once('\n');
-        let spaces = iter::repeat(' ').take(depth * self.indent_width);
-        nl.chain(spaces).collect()
+    fn indentation(&self, depth: usize) -> &[u8] {
+        let n = usize::min(SPACES.len(), depth * self.indent_width);
+        return &SPACES[..n];
     }
 }
