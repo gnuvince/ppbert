@@ -4,8 +4,9 @@ use std::fs::File;
 use std::io::{self, BufReader, BufWriter, ErrorKind, Read};
 use std::path::Path;
 use std::process::exit;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
+mod config;
 mod json_pp;
 mod parser;
 
@@ -85,6 +86,8 @@ struct Opts {
     files: Vec<String>,
 }
 
+type PpFn = fn(&parser::Terms, &config::Config, &mut dyn io::Write) -> io::Result<()>;
+
 fn main() -> io::Result<()> {
     let mut opts: Opts = gumdrop::parse_args_default_or_exit();
 
@@ -110,13 +113,17 @@ fn main() -> io::Result<()> {
     } else if opts.bert2 {
         Some(parser::BertParser::bert2_next)
     } else if opts.disk_log {
-        unimplemented!()
+        Some(parser::BertParser::disk_log_next)
     } else {
         None
     };
 
+    let pp: PpFn = if opts.json { json_pp::pp } else { json_pp::pp };
+
     let mut return_code = 0;
+
     for file in &opts.files {
+        let t = Instant::now();
         let mut buf = Vec::with_capacity(1 << 16);
         read_content(&file, &mut buf)?;
         if opts.verbose {
@@ -149,8 +156,7 @@ fn broken_pipe(err: &BertError) -> bool {
     }
 }
 
-fn read_content(filename: &str, buf: &mut Vec<u8>, verbose: bool) -> io::Result<()> {
-    let top = Instant::now();
+fn read_content(filename: &str, buf: &mut Vec<u8>) -> io::Result<()> {
     if filename == "-" {
         let stdin = io::stdin();
         let mut stdin = stdin.lock();
@@ -160,11 +166,6 @@ fn read_content(filename: &str, buf: &mut Vec<u8>, verbose: bool) -> io::Result<
         let mut f = BufReader::new(f);
         f.read_to_end(buf)?;
     }
-
-    if verbose {
-        eprintln!("{}: read time: {:?}", PROG_NAME, top.elapsed());
-    }
-
     return Ok(());
 }
 
@@ -201,9 +202,15 @@ fn parse_and_print(
         Some(f) => f,
     };
 
+    let mut parse_dur = Duration::new(0, 0);
+    let mut pp_dur = Duration::new(0, 0);
+
     loop {
         terms.clear();
-        match parser_fn(&mut parser, &mut terms) {
+        let parse_start = Instant::now();
+        let res = parser_fn(&mut parser, &mut terms);
+        parse_dur += parse_start.elapsed();
+        match res {
             None => break,
             Some(Err(e)) => {
                 eprintln!("{}: {}: {}", PROG_NAME, file, e);
@@ -220,6 +227,11 @@ fn parse_and_print(
                 }
             }
         }
+    }
+
+    if verbose {
+        eprintln!("{}: {}: parse time: {:?}", PROG_NAME, file, parse_dur);
+        eprintln!("{}: {}: print time: {:?}", PROG_NAME, file, pp_dur);
     }
 
     return Ok(());

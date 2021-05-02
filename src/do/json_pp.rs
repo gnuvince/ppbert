@@ -1,11 +1,8 @@
 use ppbert::pp::utils::*;
 use std::io::{self};
 
+use crate::config::Config;
 use crate::parser::{Tag, Terms};
-
-pub struct Config {
-    pub transform_proplists: bool,
-}
 
 pub fn pp(ts: &Terms, config: &Config, w: &mut dyn io::Write) -> io::Result<()> {
     pp_(ts, config, w, &mut 0)?;

@@ -130,6 +130,22 @@ impl BertParser {
         return Some(Ok(()));
     }
 
+    pub fn disk_log_next(&mut self, terms: &mut Terms) -> Option<Result<()>> {
+        if self.eof() {
+            return None;
+        }
+        if let Err(e) = self.disk_log_magic() {
+            return Some(Err(e));
+        }
+        if let Err(e) = self.disk_log_opened_status() {
+            return Some(Err(e));
+        }
+        if let Err(e) = self.disk_log_term(terms) {
+            return Some(Err(e));
+        }
+        return Some(Ok(()));
+    }
+
     // Parsers
     fn magic_number(&mut self) -> Result<()> {
         let initial_pos = self.pos;
@@ -141,6 +157,56 @@ impl BertParser {
             });
         }
         return Ok(());
+    }
+
+    pub fn disk_log_magic(&mut self) -> Result<()> {
+        let initial_pos = self.pos;
+        let magic = self.eat_u32_be()?;
+        if magic != DISK_LOG_MAGIC {
+            return Err(BertError::InvalidDiskLogMagic {
+                offset: initial_pos,
+                actual: magic,
+            });
+        }
+        return Ok(());
+    }
+
+    pub fn disk_log_opened_status(&mut self) -> Result<()> {
+        let initial_pos = self.pos;
+        let status = self.eat_u32_be()?;
+        if status != DISK_LOG_OPENED && status != DISK_LOG_CLOSED {
+            return Err(BertError::InvalidDiskLogOpenedStatus {
+                offset: initial_pos,
+                actual: status,
+            });
+        }
+        return Ok(());
+    }
+
+    pub fn disk_log_term(&mut self, terms: &mut Terms) -> Result<()> {
+        // XXX(vfoley): should we check that the correct length was read?
+        let _len_offset = self.pos;
+        let _len = self.eat_u32_be()?;
+
+        let magic_pos = self.pos;
+        let magic = self.eat_u32_be()?;
+        if magic != DISK_LOG_TERM_MAGIC {
+            return Err(BertError::InvalidDiskLogTermMagic {
+                offset: magic_pos,
+                actual: magic,
+            });
+        }
+
+        let magic_pos = self.pos;
+        let magic = self.eat_u8()?;
+        if magic != BERT_MAGIC_NUMBER {
+            return Err(BertError::InvalidMagicNumber {
+                offset: magic_pos,
+                actual: magic,
+            });
+        }
+
+        return self.bert_term(terms);
     }
 
     fn invalid_op_code(&mut self, _: &mut Terms) -> Result<()> {
