@@ -48,7 +48,7 @@ fn pp_(ts: &Terms, config: &Config, w: &mut dyn io::Write, pos: &mut usize) -> i
                     w.write_all(&bytes[start..i])?;
                     start = i + 1;
                     write!(w, "\\{}", b as char)?;
-                } else if !is_printable(b) {
+                } else if !is_printable(b) && !is_utf8(b) {
                     w.write_all(&bytes[start..i])?;
                     start = i + 1;
                     write!(w, "\\u{:04x}", b)?;

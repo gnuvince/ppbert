@@ -1,3 +1,7 @@
+pub fn is_utf8(b: u8) -> bool {
+    b >= 0x80
+}
+
 pub fn is_printable(b: u8) -> bool {
     b >= 0x20 && b <= 0x7e
 }
