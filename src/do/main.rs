@@ -7,6 +7,7 @@ use std::process::exit;
 use std::time::{Duration, Instant};
 
 mod config;
+mod erlang_pp;
 mod json_pp;
 mod parser;
 
@@ -118,7 +119,11 @@ fn main() -> io::Result<()> {
         None
     };
 
-    let pp: PpFn = if opts.json { json_pp::pp } else { json_pp::pp };
+    let pp: PpFn = if opts.json {
+        json_pp::pp
+    } else {
+        erlang_pp::pp
+    };
 
     let mut return_code = 0;
 
