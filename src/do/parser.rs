@@ -56,10 +56,16 @@ pub enum Tag {
 }
 
 impl Tag {
-    fn is_proplist_key(&self) -> bool {
+    pub fn is_proplist_key(&self) -> bool {
+        use Tag::*;
+        matches!(*self, Atom { .. } | String { .. } | Binary { .. })
+    }
+
+    pub fn is_simple(&self) -> bool {
+        use Tag::*;
         matches!(
             *self,
-            Tag::Atom { .. } | Tag::String { .. } | Tag::Binary { .. }
+            Int(_) | BigInt(_) | Float(_) | Atom { .. } | String { .. } | Binary { .. }
         )
     }
 }
