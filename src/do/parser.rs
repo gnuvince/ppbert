@@ -6,9 +6,6 @@ use num_traits::{One, Zero};
 
 use byteorder::{BigEndian, ReadBytesExt};
 
-use encoding::all::ISO_8859_1;
-use encoding::{DecoderTrap, Encoding};
-
 #[derive(Debug, Default)]
 pub struct Terms {
     pub tags: Vec<Tag>,
@@ -302,26 +299,22 @@ impl BertParser {
     }
 
     fn atom_with_length(&mut self, len: usize, terms: &mut Terms) -> Result<()> {
-        let initial_pos = self.pos;
+        // NB(vfoley): do ISO-8859-1 to UTF-8 conversion manually.
+        // https://stackoverflow.com/questions/4059775/convert-iso-8859-1-strings-to-utf-8-in-c-c
         let bytes: &[u8] = self.eat_slice(len)?;
-        let is_ascii = bytes.iter().all(|byte| *byte < 128);
-
-        // Optimization: ASCII atoms represent the overwhelming
-        // majority of use cases of atoms. When we read the bytes
-        // of the atom, we record whether they are all ASCII
-        // (i.e., small than 128); if it's the case, we don't
-        // need to bother with latin-1 decoding.
-        if is_ascii {
-            let (off, len) = terms.push_bytes(bytes);
-            terms.push_tag(Tag::Atom { off, len });
-        } else {
-            let mut atom_buf = String::with_capacity(len);
-            ISO_8859_1
-                .decode_to(&bytes, DecoderTrap::Strict, &mut atom_buf)
-                .map_err(|_| BertError::InvalidLatin1Atom(initial_pos))?;
-            let (off, len) = terms.push_bytes(atom_buf.as_bytes());
-            terms.push_tag(Tag::Atom { off, len });
+        let off = terms.bytes.len() as u32;
+        let mut len: u32 = 0;
+        for &b in bytes {
+            if b < 0x80 {
+                terms.bytes.push(b);
+                len += 1;
+            } else {
+                terms.bytes.push(0xc0 | b >> 6);
+                terms.bytes.push(0x80 | (b & 0x3f));
+                len += 2;
+            }
         }
+        terms.push_tag(Tag::Atom { off, len });
         return Ok(());
     }
 
